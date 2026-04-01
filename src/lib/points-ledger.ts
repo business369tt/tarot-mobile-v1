@@ -103,6 +103,8 @@ export type PointsLedgerData = {
   };
 };
 
+type PointsLedgerTotals = PointsLedgerData["totals"];
+
 function trimLine(value: string, maxLength = 88) {
   if (value.length <= maxLength) {
     return value;
@@ -296,7 +298,7 @@ export async function getViewerPointsLedger(
   }
 
   const totals = transactions.reduce(
-    (acc, transaction) => {
+    (acc: PointsLedgerTotals, transaction: PointTransactionRecord) => {
       if (transaction.amount > 0) {
         acc.restored += transaction.amount;
       } else {
