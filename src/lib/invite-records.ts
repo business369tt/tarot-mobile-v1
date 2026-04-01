@@ -90,6 +90,25 @@ async function createInviteProfile(userId: string) {
   throw new Error("INVITE_CODE_CREATE_FAILED");
 }
 
+async function getInviteRecentProgress(userId: string) {
+  return prisma.inviteReferral.findMany({
+    where: {
+      inviterId: userId,
+      rewardTransactionId: {
+        not: null,
+      },
+    },
+    orderBy: {
+      rewardedAt: "desc",
+    },
+    take: 6,
+  });
+}
+
+type InviteRecentProgressRecord = Awaited<
+  ReturnType<typeof getInviteRecentProgress>
+>[number];
+
 export async function getOrCreateInviteProfile(userId: string) {
   const existingProfile = await prisma.inviteProfile.findUnique({
     where: { userId },
@@ -111,18 +130,7 @@ export async function getViewerInviteSurface(
       where: { id: userId },
       select: { points: true },
     }),
-    prisma.inviteReferral.findMany({
-      where: {
-        inviterId: userId,
-        rewardTransactionId: {
-          not: null,
-        },
-      },
-      orderBy: {
-        rewardedAt: "desc",
-      },
-      take: 6,
-    }),
+    getInviteRecentProgress(userId),
     prisma.inviteReferral.aggregate({
       where: {
         inviterId: userId,
@@ -150,7 +158,7 @@ export async function getViewerInviteSurface(
     totalRewardPoints: aggregates._sum.rewardPoints ?? 0,
     availablePoints: user.points,
     rewardPerInvite: inviteRewardPoints,
-    recentProgress: recentProgress.map((record) => ({
+    recentProgress: recentProgress.map((record: InviteRecentProgressRecord) => ({
       id: record.id,
       inviteeName: record.inviteeName || "A new reader",
       status: "rewarded",
