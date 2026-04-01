@@ -1,9 +1,8 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
+import type { ITXClientDenyList } from "@prisma/client/runtime/client";
 
-export type TransactionClient = Parameters<
-  Parameters<PrismaClient["$transaction"]>[0]
->[0];
+export type TransactionClient = Omit<PrismaClient, ITXClientDenyList>;
 
 const globalForPrisma = globalThis as unknown as {
   prismaAdapter?: PrismaBetterSqlite3;
