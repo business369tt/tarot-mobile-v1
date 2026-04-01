@@ -431,7 +431,7 @@ export async function POST(request: Request) {
   if (availablePoints < followupCostPoints) {
     const followups = await resolveFollowupRecords(readingRecord.id, viewerId);
     const currentFollowup =
-      followups.find((item) => item.id === pendingRecord.id) ??
+      followups.find((item: { id: string }) => item.id === pendingRecord.id) ??
       mapRecordToFollowupRecord(pendingRecord);
 
     return createInsufficientPointsResponse({
