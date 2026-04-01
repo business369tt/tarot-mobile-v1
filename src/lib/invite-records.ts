@@ -182,7 +182,7 @@ export async function claimInviteForViewer(args: {
   }
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const profile = await tx.inviteProfile.findUnique({
         where: {
           code: normalizedCode,

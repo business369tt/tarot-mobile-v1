@@ -366,7 +366,7 @@ export async function createPointsTopUp(args: {
   requestKey: string;
   description: string;
 }) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const existingTransaction = await tx.pointTransaction.findUnique({
       where: {
         requestKey: args.requestKey,
@@ -432,7 +432,7 @@ export async function ensureReadingCharge(args: {
   const cost = args.costPoints ?? readingCostPoints;
   const requestKey = buildReadingChargeRequestKey(args.sessionId);
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const readingRecord = await tx.readingRecord.findUnique({
       where: { id: args.readingRecordId },
       select: {
@@ -555,7 +555,7 @@ export async function ensureFollowupCharge(args: {
   const cost = args.costPoints ?? followupCostPoints;
   const chargeRequestKey = buildFollowupChargeRequestKey(args.requestKey);
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const followupRecord = await tx.followupRecord.findUnique({
       where: { id: args.followupRecordId },
       select: {

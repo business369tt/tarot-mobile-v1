@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { dailyCheckInPoints } from "@/lib/points";
 import { prisma } from "@/lib/prisma";
 
@@ -83,7 +84,7 @@ export async function claimDailyCheckIn(userId: string) {
   const dayKey = getDailyCheckInDayKey();
   const requestKey = buildDailyCheckInRequestKey(userId, dayKey);
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const existingCheckIn = await tx.dailyCheckIn.findUnique({
       where: {
         userId_dayKey: {
