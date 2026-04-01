@@ -1,21 +1,22 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import type { PrismaClient as GeneratedPrismaClient } from "@prisma/client/index";
 import type { ITXClientDenyList } from "@prisma/client/runtime/client";
+
+type PrismaClientLike = Record<string, any>;
 
 type PrismaClientConstructor = new (options?: {
   adapter?: PrismaBetterSqlite3;
   log?: Array<"error" | "warn">;
-}) => GeneratedPrismaClient;
+}) => PrismaClientLike;
 
 const { PrismaClient } = require("@prisma/client") as {
   PrismaClient: PrismaClientConstructor;
 };
 
-export type TransactionClient = Omit<GeneratedPrismaClient, ITXClientDenyList>;
+export type TransactionClient = Omit<PrismaClientLike, ITXClientDenyList>;
 
 const globalForPrisma = globalThis as unknown as {
   prismaAdapter?: PrismaBetterSqlite3;
-  prisma?: GeneratedPrismaClient;
+  prisma?: PrismaClientLike;
 };
 
 const databaseUrl = process.env.DATABASE_URL;
