@@ -89,7 +89,7 @@ function normalizeCardsSnapshot(value: unknown) {
 
   return value
     .slice(0, 3)
-    .map((card, index) => {
+    .map((card: unknown, index: number) => {
       if (!card || typeof card !== "object") {
         return null;
       }
@@ -145,7 +145,9 @@ export function normalizeStructuredTarotReading(
   const [threshold, mirror, horizon] = cards;
   const guidance =
     Array.isArray(value?.concreteGuidance) && value.concreteGuidance.length >= 3
-      ? value.concreteGuidance.slice(0, 3).map((item) => String(item).trim())
+      ? value.concreteGuidance
+          .slice(0, 3)
+          .map((item: string) => String(item).trim())
       : [
           "Keep your next step simple enough to act on without forcing certainty.",
           "Let the strongest emotional signal inform the pace, not the fear around it.",

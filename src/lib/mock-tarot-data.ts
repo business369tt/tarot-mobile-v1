@@ -237,7 +237,9 @@ export function buildSpread(seed: number) {
 
 export function buildSelectedCard(card: TarotCard, slot: number): SelectedTarotCard {
   const orientationScore =
-    card.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), slot * 17) %
+    card.id
+      .split("")
+      .reduce((acc: number, char: string) => acc + char.charCodeAt(0), slot * 17) %
     4;
   const orientation: TarotOrientation =
     orientationScore === 0 ? "reversed" : "upright";
@@ -261,7 +263,7 @@ export function buildReadingSections(args: {
   const [first, second, third] = args.cards;
   const focusQuestion = args.question.trim() || defaultQuestion;
 
-  return sectionBlueprints.map((section, index) => {
+  return sectionBlueprints.map((section: (typeof sectionBlueprints)[number], index: number) => {
     const anchorCard = args.cards[index % args.cards.length] ?? first;
     const cardLine =
       anchorCard.orientation === "upright"

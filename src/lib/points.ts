@@ -94,7 +94,10 @@ export const pointPackages: PointPackage[] = [
 ];
 
 export function getPointPackage(packageId: string | null | undefined) {
-  return pointPackages.find((item) => item.id === packageId) ?? pointPackages[0];
+  return (
+    pointPackages.find((item: PointPackage) => item.id === packageId) ??
+    pointPackages[0]
+  );
 }
 
 export function getPointsIntent(

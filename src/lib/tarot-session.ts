@@ -100,7 +100,7 @@ function normalizeSelectedCards(value: unknown) {
 
   return value
     .slice(0, 3)
-    .map((card, index) => {
+    .map((card: unknown, index: number) => {
       if (!card || typeof card !== "object") {
         return null;
       }

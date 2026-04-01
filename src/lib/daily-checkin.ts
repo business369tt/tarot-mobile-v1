@@ -36,9 +36,9 @@ export type DailyCheckInState = {
 
 export function getDailyCheckInDayKey(date = new Date()) {
   const parts = dayKeyFormatter.formatToParts(date);
-  const year = parts.find((part) => part.type === "year")?.value;
-  const month = parts.find((part) => part.type === "month")?.value;
-  const day = parts.find((part) => part.type === "day")?.value;
+  const year = parts.find((part: Intl.DateTimeFormatPart) => part.type === "year")?.value;
+  const month = parts.find((part: Intl.DateTimeFormatPart) => part.type === "month")?.value;
+  const day = parts.find((part: Intl.DateTimeFormatPart) => part.type === "day")?.value;
 
   return `${year}-${month}-${day}`;
 }

@@ -48,7 +48,7 @@ function buildReadingPrompt(args: {
 }) {
   const categoryMeta = getCategoryMeta(args.category);
   const cardLines = args.cards
-    .map((card) => {
+    .map((card: SelectedTarotCard) => {
       const orientationLine =
         card.orientation === "upright" ? card.uprightText : card.reversedText;
 
@@ -109,7 +109,7 @@ function buildReadingPrompt(args: {
 
 function buildCardContext(cards: SelectedTarotCard[]) {
   return cards
-    .map((card) => {
+    .map((card: SelectedTarotCard) => {
       const orientationLine =
         card.orientation === "upright" ? card.uprightText : card.reversedText;
 
@@ -201,7 +201,7 @@ function getTextContent(response: MiniMaxMessageResponse) {
     .filter(
       (block): block is { type: "text"; text?: string } => block.type === "text",
     )
-    .map((block) => block.text?.trim() ?? "")
+    .map((block: { type: "text"; text?: string }) => block.text?.trim() ?? "")
     .filter(Boolean)
     .join("\n")
     .trim();

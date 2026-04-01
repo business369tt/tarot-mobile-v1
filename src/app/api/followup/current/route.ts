@@ -175,6 +175,8 @@ function createInsufficientPointsResponse(args: {
   );
 }
 
+type FollowupResponseRecord = ReturnType<typeof mapRecordToFollowupRecord>;
+
 export async function GET() {
   const viewerId = await getViewerId();
 
@@ -431,7 +433,7 @@ export async function POST(request: Request) {
   if (availablePoints < followupCostPoints) {
     const followups = await resolveFollowupRecords(readingRecord.id, viewerId);
     const currentFollowup =
-      followups.find((item: { id: string }) => item.id === pendingRecord.id) ??
+      followups.find((item: FollowupResponseRecord) => item.id === pendingRecord.id) ??
       mapRecordToFollowupRecord(pendingRecord);
 
     return createInsufficientPointsResponse({
@@ -479,7 +481,9 @@ export async function POST(request: Request) {
       });
       const followups = await resolveFollowupRecords(readingRecord.id, viewerId);
       const currentFollowup =
-        followups.find((item: { id: string }) => item.id === pointsPendingRecord.id) ??
+        followups.find(
+          (item: FollowupResponseRecord) => item.id === pointsPendingRecord.id,
+        ) ??
         mapRecordToFollowupRecord(pointsPendingRecord);
 
       return createInsufficientPointsResponse({
@@ -505,7 +509,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       currentFollowup:
-        followups.find((item: { id: string }) => item.id === readyRecord.id) ??
+        followups.find((item: FollowupResponseRecord) => item.id === readyRecord.id) ??
         mapRecordToFollowupRecord(readyRecord),
       followups,
     });
@@ -526,7 +530,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         currentFollowup:
-          followups.find((item: { id: string }) => item.id === failedRecord.id) ??
+          followups.find(
+            (item: FollowupResponseRecord) => item.id === failedRecord.id,
+          ) ??
           mapRecordToFollowupRecord(failedRecord),
         followups,
         message: failedRecord.errorMessage,
