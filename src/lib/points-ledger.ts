@@ -9,7 +9,7 @@ import {
   type PointPackage,
 } from "@/lib/points";
 
-const pointsDateFormatter = new Intl.DateTimeFormat("en-US", {
+const pointsDateFormatter = new Intl.DateTimeFormat("zh-TW", {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -117,7 +117,7 @@ function mapTransactionToLedgerEntry(
   record: PointTransactionRecord,
 ): PointsLedgerEntry {
   const direction = record.amount >= 0 ? "credit" : "debit";
-  const amountLabel = `${record.amount >= 0 ? "+" : ""}${record.amount} pts`;
+  const amountLabel = `${record.amount >= 0 ? "+" : ""}${record.amount} 點 / pts`;
   const topUpLabel = record.description
     ?.replace(/^Top-up via\s+/i, "")
     .trim();
@@ -126,22 +126,22 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "reading",
-      typeLabel: "Destiny reading",
-      typeBadge: "Reading",
+      typeLabel: "命運解讀 / Destiny reading",
+      typeBadge: "解讀 / Reading",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `${record.balanceAfter} pts after this reading`,
+      balanceAfterLabel: `這次解讀後剩下 ${record.balanceAfter} 點`,
       description: record.readingCharge?.question
-        ? `Opened the report for "${trimLine(record.readingCharge.question, 64)}"`
-        : "Used to open a full tarot report.",
+        ? `為「${trimLine(record.readingCharge.question, 64)}」打開完整報告。`
+        : "用於開啟一份完整塔羅報告。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.readingCharge?.id
         ? `/history/${record.readingCharge.id}`
         : null,
-      detailLabel: record.readingCharge?.id ? "Open reading" : null,
+      detailLabel: record.readingCharge?.id ? "打開解讀（Open reading）" : null,
     };
   }
 
@@ -149,22 +149,22 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "followup",
-      typeLabel: "AI follow-up",
-      typeBadge: "Follow-up",
+      typeLabel: "AI 追問 / AI follow-up",
+      typeBadge: "追問 / Follow-up",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `${record.balanceAfter} pts after this follow-up`,
+      balanceAfterLabel: `這次追問後剩下 ${record.balanceAfter} 點`,
       description: record.followupCharge?.prompt
-        ? `Continued the thread with "${trimLine(record.followupCharge.prompt, 64)}"`
-        : "Used to continue a follow-up thread from a reading.",
+        ? `以「${trimLine(record.followupCharge.prompt, 64)}」續接這條解讀脈絡。`
+        : "用於續接同一份解讀裡的追問脈絡。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.followupCharge?.readingRecordId
         ? `/history/${record.followupCharge.readingRecordId}`
         : null,
-      detailLabel: record.followupCharge?.readingRecordId ? "Open reading" : null,
+      detailLabel: record.followupCharge?.readingRecordId ? "打開解讀（Open reading）" : null,
     };
   }
 
@@ -172,22 +172,22 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "top_up",
-      typeLabel: "Points restored",
-      typeBadge: "Top-up",
+      typeLabel: "補回點數 / Points restored",
+      typeBadge: "補點 / Top-up",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `${record.balanceAfter} pts available now`,
+      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
       description: topUpLabel
-        ? `Restored through ${topUpLabel}.`
-        : "Balance restored for the next reading you want to open.",
+        ? `透過 ${topUpLabel} 補回點數。`
+        : "為下一次想打開的解讀補回點數。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.topUpOrder?.id
         ? `/points?payment=success&order=${record.topUpOrder.id}`
         : "/points",
-      detailLabel: "Open points",
+      detailLabel: "打開點數頁（Open points）",
     };
   }
 
@@ -195,20 +195,20 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "invite_reward",
-      typeLabel: "Invite reward",
-      typeBadge: "Invite",
+      typeLabel: "邀請獎勵 / Invite reward",
+      typeBadge: "邀請 / Invite",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `${record.balanceAfter} pts available now`,
+      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
       description: record.inviteReward?.inviteeName
-        ? `${record.inviteReward.inviteeName} entered through your shared link.`
-        : "A shared invitation settled points back into your balance.",
+        ? `${record.inviteReward.inviteeName} 透過你的分享連結進入。`
+        : "有一筆共享邀請已將點數回補到你的餘額中。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: "/invite",
-      detailLabel: "Open invite",
+      detailLabel: "打開邀請頁（Open invite）",
     };
   }
 
@@ -216,33 +216,33 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "daily_check_in",
-      typeLabel: "Daily return",
-      typeBadge: "Check-in",
+      typeLabel: "每日回訪 / Daily return",
+      typeBadge: "簽到 / Check-in",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `${record.balanceAfter} pts available now`,
+      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
       description: record.dailyCheckIn?.dayKey
-        ? `Returned for ${record.dailyCheckIn.dayKey} and gathered today's quiet balance.`
-        : "Returned today and gathered a quiet balance.",
+        ? `在 ${record.dailyCheckIn.dayKey} 回來簽到，並領取今天的小額點數。`
+        : "今天已回來簽到，並領取了一筆小額點數。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: "/points",
-      detailLabel: "Open points",
+      detailLabel: "打開點數頁（Open points）",
     };
   }
 
   return {
     id: record.id,
     type: "adjustment",
-    typeLabel: "Balance update",
-    typeBadge: "Adjustment",
+    typeLabel: "餘額調整 / Balance update",
+    typeBadge: "調整 / Adjustment",
     amount: record.amount,
     amountLabel,
     balanceAfter: record.balanceAfter,
-    balanceAfterLabel: `${record.balanceAfter} pts available now`,
-    description: record.description || "A point balance adjustment was recorded here.",
+    balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
+    description: record.description || "這裡記錄了一筆點數餘額調整。",
     createdAt: record.createdAt.toISOString(),
     createdLabel: pointsDateFormatter.format(record.createdAt),
     direction,

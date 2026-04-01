@@ -25,13 +25,13 @@ export type FollowupRecord = {
 
 export const defaultFollowupStatus: FollowupRecordStatus = "idle";
 export const followupFailureMessage =
-  "The thread did not settle into words just yet. Give it another calm try.";
+  "這條脈絡暫時還沒整理成文字，請再安靜試一次。 / The thread did not settle into words just yet. Give it another calm try.";
 export const followupNeedsReadingMessage =
-  "The follow-up can open once the main reading is fully ready.";
+  "主解讀完整就緒後，追問才會打開。 / The follow-up can open once the main reading is fully ready.";
 export const followupNeedsPointsMessage =
-  "You are one step away from this next answer. Restore points first, then return here and continue the thread.";
+  "你離下一段答案只差一步。請先補回點數，再回到這裡續接脈絡。 / You are one step away from this next answer. Restore points first, then return here and continue the thread.";
 export const followupUnavailableMessage =
-  "The follow-up service is not available in this environment yet.";
+  "這個環境目前還無法使用追問服務。 / The follow-up service is not available in this environment yet.";
 
 type FollowupRecordInput = {
   id: string;

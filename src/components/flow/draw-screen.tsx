@@ -4,7 +4,12 @@ import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { TarotCardBack, TarotCardFace } from "@/components/flow/tarot-card";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
-import { cardRoles, defaultQuestion } from "@/lib/mock-tarot-data";
+import {
+  cardRoles,
+  defaultQuestionDisplay,
+  getCardRoleDisplayMeta,
+  getCategoryDisplayMeta,
+} from "@/lib/mock-tarot-data";
 
 export function DrawScreen() {
   const router = useRouter();
@@ -20,7 +25,8 @@ export function DrawScreen() {
   } = useTarotFlow();
   const progress = selectedCards.length;
   const isComplete = progress === 3;
-  const focusQuestion = session?.question.trim() || defaultQuestion;
+  const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
+  const categoryDisplay = getCategoryDisplayMeta(sessionCategoryMeta.id);
 
   function handleContinue() {
     if (!isComplete) {
@@ -39,7 +45,7 @@ export function DrawScreen() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Draw the spread
+              抽出牌陣
             </p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">
               &ldquo;{focusQuestion}&rdquo;
@@ -47,13 +53,14 @@ export function DrawScreen() {
           </div>
 
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/54">
-            {sessionCategoryMeta.label}
+            {`${categoryDisplay.labelZh} / ${categoryDisplay.labelEn}`}
           </span>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
           {cardRoles.map((role, index) => {
             const isActive = index < progress;
+            const roleDisplay = getCardRoleDisplayMeta(role.role);
 
             return (
               <div
@@ -68,10 +75,13 @@ export function DrawScreen() {
                   0{index + 1}
                 </p>
                 <p className="mt-2 text-[13px] font-semibold text-card-foreground sm:text-sm">
-                  {role.role}
+                  {roleDisplay.labelZh}
+                </p>
+                <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-foreground/38">
+                  {roleDisplay.labelEn}
                 </p>
                 <p className="mt-1 text-[11px] leading-5 text-muted">
-                  {role.roleSubtitle}
+                  {roleDisplay.subtitleZh}
                 </p>
               </div>
             );
@@ -79,7 +89,7 @@ export function DrawScreen() {
         </div>
 
         <div className="mt-5 flex items-center justify-between text-[11px] uppercase tracking-[0.22em] text-foreground/46">
-          <span>Choose three cards that hold your gaze</span>
+          <span>選出三張真正抓住你視線的牌 / Choose three cards that hold your gaze</span>
           <span>{progress}/3</span>
         </div>
       </div>
@@ -126,11 +136,10 @@ export function DrawScreen() {
 
         <div className="relative mt-4 rounded-[1.35rem] border border-white/10 bg-black/18 p-4 sm:mt-5 sm:rounded-[1.45rem]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-foreground/42">
-            Drawing note
+            抽牌提醒
           </p>
           <p className="mt-3 text-sm leading-6 text-muted">
-            Do not scan for the best-looking card. Pause over the ones that
-            feel quieter, heavier, or harder to ignore.
+            不要挑看起來最漂亮的那張。請停留在那些更安靜、更沉、更難忽視的牌上。
           </p>
         </div>
       </div>
@@ -139,10 +148,10 @@ export function DrawScreen() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Chosen spread
+              已選牌陣
             </p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Each selected card settles into the reading order below.
+              每一張已選牌都會依序落入下方的解讀位置。
             </p>
           </div>
 
@@ -151,13 +160,14 @@ export function DrawScreen() {
             onClick={resetSelection}
             className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/56 transition hover:border-line-strong hover:text-card-foreground motion-reduce:transition-none"
           >
-            Clear
+            清除 / Clear
           </button>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
           {cardRoles.map((role, slot) => {
             const card = selectedCards[slot];
+            const roleDisplay = getCardRoleDisplayMeta(role.role);
 
             if (!card) {
               return (
@@ -166,10 +176,13 @@ export function DrawScreen() {
                   className="min-w-0 rounded-[1.2rem] border border-dashed border-white/10 bg-black/18 px-3 py-4 sm:rounded-[1.35rem]"
                 >
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/38">
-                    {role.role}
+                    {roleDisplay.labelZh}
+                  </p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-foreground/30">
+                    {roleDisplay.labelEn}
                   </p>
                   <p className="mt-3 text-[11px] leading-5 text-muted">
-                    Waiting for a card to be drawn into place.
+                    正等待一張牌落到這個位置。 / Waiting for a card to be drawn into place.
                   </p>
                 </div>
               );
@@ -183,7 +196,7 @@ export function DrawScreen() {
                   onClick={() => removeSelectedCard(card.id)}
                   className="w-full rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56 transition hover:border-line-strong hover:text-card-foreground motion-reduce:transition-none sm:tracking-[0.2em]"
                 >
-                  Release
+                  放開 / Release
                 </button>
               </div>
             );
@@ -197,7 +210,7 @@ export function DrawScreen() {
         onClick={handleContinue}
         className="mt-auto min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none motion-safe:[animation:section-rise_1040ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.4rem]"
       >
-        Continue to reveal
+        繼續前往翻牌（Continue to reveal）
       </button>
     </section>
   );

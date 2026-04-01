@@ -3,7 +3,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { inviteRewardPoints, buildInviteLink } from "@/lib/invite";
 import { prisma, type TransactionClient } from "@/lib/prisma";
 
-const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
+const inviteDateFormatter = new Intl.DateTimeFormat("zh-TW", {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -160,15 +160,15 @@ export async function getViewerInviteSurface(
     rewardPerInvite: inviteRewardPoints,
     recentProgress: recentProgress.map((record: InviteRecentProgressRecord) => ({
       id: record.id,
-      inviteeName: record.inviteeName || "A new reader",
+      inviteeName: record.inviteeName || "一位新朋友 / A new reader",
       status: "rewarded",
-      statusLabel: "Reward settled",
+      statusLabel: "獎勵已入帳 / Reward settled",
       rewardPoints: record.rewardPoints,
-      rewardLabel: `+${record.rewardPoints} pts`,
+      rewardLabel: `+${record.rewardPoints} 點 / pts`,
       summary:
         record.inviteeName
-          ? `${record.inviteeName} entered through your link and settled a reward into your balance.`
-          : "A new reader entered through your link and settled a reward into your balance.",
+          ? `${record.inviteeName} 透過你的連結進入，並讓獎勵順利回到你的餘額裡。`
+          : "有一位新朋友透過你的連結進入，並讓獎勵順利回到你的餘額裡。",
       createdAt: (record.rewardedAt ?? record.createdAt).toISOString(),
       createdLabel: inviteDateFormatter.format(
         record.rewardedAt ?? record.createdAt,
@@ -280,9 +280,9 @@ export async function claimInviteForViewer(args: {
           kind: "credit",
           source: "invite_reward",
           requestKey,
-          description: invitee.name
-            ? `Invite reward from ${invitee.name}`
-            : "Invite reward",
+        description: invitee.name
+            ? `邀請獎勵：${invitee.name} / Invite reward from ${invitee.name}`
+            : "邀請獎勵 / Invite reward",
         },
       });
 

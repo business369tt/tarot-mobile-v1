@@ -88,7 +88,7 @@ function mapRecordToOrderView(record: NonNullable<TopUpOrderRecord>): TopUpOrder
 }
 
 function getProductDescription(pointPackage: PointPackage) {
-  return `${pointPackage.caption} ${pointPackage.points} points will settle into the same balance used for readings and follow-ups.`;
+  return `${pointPackage.caption} 補入的 ${pointPackage.points} 點，會進到同一個用於解讀與追問的餘額裡。`;
 }
 
 async function createStripeCheckoutSession(args: {
@@ -158,7 +158,7 @@ async function createStripeCheckoutSession(args: {
 }
 
 function getTopUpDescription(packageLabel: string) {
-  return `Top-up via ${packageLabel} · ${stripeProviderLabel}`;
+  return `透過 ${packageLabel} 補點 · ${stripeProviderLabel}`;
 }
 
 async function settleTopUpOrderById(args: {
@@ -335,7 +335,7 @@ async function syncPendingOrderWithStripe(order: NonNullable<TopUpOrderRecord>) 
       const failed = await updateOrderStatusByCheckoutSession({
         checkoutSessionId: checkoutSession.id,
         status: "failed",
-        message: "The payment did not complete this time.",
+        message: "這次付款沒有完成。",
         providerPaymentId,
       });
 
@@ -419,7 +419,7 @@ export async function createTopUpCheckoutOrder(args: TopUpCheckoutArgs) {
       where: { id: draftOrder.id },
       data: {
         status: "failed",
-        errorMessage: "The payment link did not open this time.",
+        errorMessage: "這次付款連結沒有成功打開。",
         failedAt: new Date(),
       },
     });
@@ -574,8 +574,8 @@ export async function resolvePointsPaymentView(args: {
       surface: order?.status === "paid" ? "success" : "canceled",
       order,
       message: order
-        ? "No points moved yet. You can return to the same restore step whenever you are ready."
-        : "That payment return could not be reopened from this profile.",
+        ? "目前還沒有點數變動；等你準備好時，可以回到同一個補點步驟。 / No points moved yet. You can return to the same restore step whenever you are ready."
+        : "無法從這個身份重新打開該付款回傳。",
     } satisfies PointsPaymentView;
   }
 
@@ -588,7 +588,7 @@ export async function resolvePointsPaymentView(args: {
     return {
       surface: "failed",
       order,
-      message: order?.errorMessage ?? "The payment did not settle this time.",
+      message: order?.errorMessage ?? "這次付款沒有成功入帳。",
     } satisfies PointsPaymentView;
   }
 
@@ -599,7 +599,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "failed",
         order: null,
-        message: "The payment return could not be reopened from this profile.",
+        message: "無法從這個身份重新打開付款回傳。",
       } satisfies PointsPaymentView;
     }
 
@@ -607,7 +607,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "success",
         order,
-        message: "The points have settled into your balance.",
+        message: "點數已經入到你的餘額中。",
       } satisfies PointsPaymentView;
     }
 
@@ -615,7 +615,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "failed",
         order,
-        message: order.errorMessage ?? "The payment did not settle this time.",
+        message: order.errorMessage ?? "這次付款沒有成功入帳。",
       } satisfies PointsPaymentView;
     }
 
@@ -623,14 +623,14 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "canceled",
         order,
-        message: "No points moved yet. You can reopen the same restore step whenever you are ready.",
+        message: "目前還沒有點數變動；等你準備好時，可以重新打開同一個補點步驟。",
       } satisfies PointsPaymentView;
     }
 
     return {
       surface: "settling",
       order,
-      message: "Payment is confirmed. The balance is settling now.",
+      message: "付款已確認，系統正在更新餘額。",
     } satisfies PointsPaymentView;
   }
 

@@ -6,7 +6,10 @@ import { startTransition, useEffect, useEffectEvent, useState } from "react";
 import { ReadingFollowupPanel } from "@/components/flow/reading-followup-panel";
 import { TarotCardFace } from "@/components/flow/tarot-card";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
-import { defaultQuestion } from "@/lib/mock-tarot-data";
+import {
+  defaultQuestionDisplay,
+  getCategoryDisplayMeta,
+} from "@/lib/mock-tarot-data";
 import {
   buildReadingSections,
   readingFailureMessage,
@@ -52,19 +55,22 @@ async function requestCurrentReading(method: "GET" | "POST", force = false) {
 }
 
 function getStatusLabel(status: ReadingViewStatus) {
-  if (status === "ready") return "Ready";
-  if (status === "needs_points") return "Points";
-  if (status === "failed") return "Retry";
-  return "Generating";
+  if (status === "ready") return "已完成 / Ready";
+  if (status === "needs_points") return "待補點 / Points";
+  if (status === "failed") return "可重試 / Retry";
+  return "生成中 / Generating";
 }
 
 export function ReadingScreen() {
   const router = useRouter();
   const { session, sessionCategoryMeta, selectedCards, startNewReading } = useTarotFlow();
   const reportCards = selectedCards;
-  const focusQuestion = session?.question.trim() || defaultQuestion;
+  const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
+  const categoryDisplay = getCategoryDisplayMeta(sessionCategoryMeta.id);
   const trioLine = reportCards.map((card) => card.name).join(" / ");
-  const historyLabel = session?.saveToHistory ? "History on" : "History off";
+  const historyLabel = session?.saveToHistory
+    ? "保留紀錄 / History on"
+    : "不保留 / History off";
   const sessionId = session?.sessionId ?? null;
   const isSpreadReady = Boolean(session && selectedCards.length === 3 && session.revealed >= 3);
   const [viewState, setViewState] = useState<ReadingScreenState>({
@@ -89,31 +95,49 @@ export function ReadingScreen() {
     (trioLine
       ? `${trioLine} form the tonal spine of this reading. Let their order matter as much as their individual meanings.`
       : "The chosen spread will settle into a single line once the report is ready.");
-  const heroTitle =
+  const heroCopy =
     status === "ready"
-      ? "The spread has\nsettled into view."
+      ? {
+          titleZh: "牌陣已經\n沉成清楚的畫面。",
+          titleEn: "The spread has settled into view.",
+          bodyZh:
+            activeReading?.reportSubtitle ||
+            "請慢慢閱讀。這份報告刻意保留比較安靜的節奏，而不是堆成一整面密集說明。",
+          bodyEn:
+            "Read this slowly. The report is structured in a quieter rhythm, not as a dense wall of explanation.",
+        }
       : status === "needs_points"
-        ? "You are one step\nfrom the full answer."
+        ? {
+            titleZh: "你離完整答案\n只差一步。",
+            titleEn: "You are one step from the full answer.",
+            bodyZh:
+              "先在這裡補一次點數，再直接回到這份解讀，讓報告從原本的位置繼續完成。",
+            bodyEn:
+              "Add points once here, then return directly to this reading and let the report continue from the same place.",
+          }
         : status === "failed"
-          ? "The report slipped\nout of focus."
-          : "The report is\nsettling into view.";
-  const heroBody =
-    status === "ready"
-      ? activeReading?.reportSubtitle ||
-        "Read this slowly. The report is structured in a quieter rhythm, not as a dense wall of explanation."
-      : status === "needs_points"
-        ? "Add points once here, then return directly to this reading and let the report continue from the same place."
-        : status === "failed"
-          ? errorMessage || readingFailureMessage
-          : "The reading is being composed from your question, category, and the three cards you revealed.";
+          ? {
+              titleZh: "這份報告\n暫時失去焦點了。",
+              titleEn: "The report slipped out of focus.",
+              bodyZh: errorMessage || readingFailureMessage,
+              bodyEn: "The report can be attempted again from the same spread.",
+            }
+          : {
+              titleZh: "報告正在\n慢慢成形。",
+              titleEn: "The report is settling into view.",
+              bodyZh:
+                "系統正根據你的問題、分類與三張已翻開的牌，整理這份解讀內容。",
+              bodyEn:
+                "The reading is being composed from your question, category, and the three cards you revealed.",
+            };
   const cadenceCopy =
     status === "ready"
       ? activeReading?.spreadAxis || cadenceLine
       : status === "needs_points"
-        ? "The spread is already complete. It only needs the reading balance restored before the final interpretation can open."
+        ? "牌陣已經完整，只差補回解讀所需點數，就能打開最後的完整詮釋。"
         : status === "failed"
-          ? "The cards are still intact. Try composing the report again when you are ready."
-          : "The report is aligning the three-card movement into a complete reading before it opens below.";
+          ? "牌陣依然完整；等你準備好時，可以再讓這份報告重新生成一次。"
+          : "系統正在把三張牌的流動整理成一份完整解讀，完成後就會在下方打開。";
 
   async function runGenerateReading(force = false, canUpdate: () => boolean = () => true) {
     if (!canUpdate() || !sessionId) return;
@@ -195,12 +219,23 @@ export function ReadingScreen() {
         <div className="pointer-events-none absolute right-[-4rem] top-[-3rem] h-36 w-36 rounded-full bg-[radial-gradient(circle,_rgba(185,144,93,0.18),_transparent_68%)] blur-3xl" />
         <div className="pointer-events-none absolute left-[-4rem] top-12 h-28 w-28 rounded-full bg-[radial-gradient(circle,_rgba(121,152,255,0.1),_transparent_72%)] blur-3xl" />
         <div className="relative">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">Destiny report</p>
-          <h2 className="mt-4 whitespace-pre-line font-display text-[2.05rem] leading-[0.94] text-card-foreground sm:text-[2.35rem] sm:leading-[0.92]">{heroTitle}</h2>
-          <p className="mt-4 max-w-[18rem] text-[13px] leading-7 text-muted sm:text-sm">{heroBody}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">命運報告</p>
+          <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-foreground/38">Destiny report</p>
+          <h2 className="mt-4">
+            <span className="block whitespace-pre-line font-display text-[2.05rem] leading-[0.94] text-card-foreground sm:text-[2.35rem] sm:leading-[0.92]">
+              {heroCopy.titleZh}
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-foreground/44">
+              {heroCopy.titleEn}
+            </span>
+          </h2>
+          <div className="mt-4 max-w-[18rem] space-y-2">
+            <p className="text-[13px] leading-7 text-muted sm:text-sm">{heroCopy.bodyZh}</p>
+            <p className="text-xs leading-6 text-foreground/42">{heroCopy.bodyEn}</p>
+          </div>
           {activeReading?.reportTitle ? <p className="mt-4 text-sm font-semibold text-card-foreground">{activeReading.reportTitle}</p> : null}
           <div className="mt-6 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.22em] text-foreground/52">
-            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{sessionCategoryMeta.label}</span>
+            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{`${categoryDisplay.labelZh} / ${categoryDisplay.labelEn}`}</span>
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{historyLabel}</span>
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{getStatusLabel(status)}</span>
             {record?.model ? <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{record.model}</span> : null}
@@ -211,13 +246,13 @@ export function ReadingScreen() {
       <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-4 motion-safe:[animation:section-rise_760ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.9rem] sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/42">Question held</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/42">提問主軸 / Question held</p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">&ldquo;{focusQuestion}&rdquo;</p>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">Kept in focus</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">保持聚焦 / Kept in focus</span>
         </div>
         <div className="mt-4 rounded-[1.3rem] border border-white/10 bg-black/18 p-4 sm:mt-5 sm:rounded-[1.35rem]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-strong">Constellation line</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-strong">牌陣軸線 / Constellation line</p>
           <p className="mt-3 text-sm leading-7 text-muted">{constellationLine}</p>
         </div>
       </div>
@@ -227,16 +262,16 @@ export function ReadingScreen() {
         <div className="relative">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">Three-card spread</p>
-              <p className="mt-2 text-sm leading-6 text-muted">Read the cards once with the eyes, then again with the body.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">三張牌陣 / Three-card spread</p>
+              <p className="mt-2 text-sm leading-6 text-muted">先用眼睛讀一次，再用身體讀一次。 / Read the cards once with the eyes, then again with the body.</p>
             </div>
-            <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">Full view</span>
+            <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">完整展開 / Full view</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
             {reportCards.map((card) => <TarotCardFace key={card.id} card={card} variant="report" showNarrative={false} />)}
           </div>
           <div className="mt-4 rounded-[1.3rem] border border-white/10 bg-black/18 p-4 sm:mt-5 sm:rounded-[1.35rem]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-foreground/42">Reading cadence</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-foreground/42">閱讀節奏 / Reading cadence</p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">{cadenceCopy}</p>
           </div>
         </div>
@@ -262,28 +297,52 @@ export function ReadingScreen() {
         <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 motion-safe:[animation:section-rise_960ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.9rem] sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">{status === "needs_points" ? "One step left" : status === "failed" ? "Reading interrupted" : "Composing report"}</p>
-              <h3 className="mt-3 whitespace-pre-line font-display text-[1.75rem] leading-[0.98] text-card-foreground">{status === "needs_points" ? "Restore the points,\nthen reopen the answer." : status === "failed" ? "The report needs\nanother pass." : "The report is\nbeing written now."}</h3>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
+                {status === "needs_points"
+                  ? "還差一步 / One step left"
+                  : status === "failed"
+                    ? "解讀中斷 / Reading interrupted"
+                    : "整理報告 / Composing report"}
+              </p>
+              <h3 className="mt-3 whitespace-pre-line font-display text-[1.75rem] leading-[0.98] text-card-foreground">
+                {status === "needs_points"
+                  ? "先補回點數，\n再重新打開答案。"
+                  : status === "failed"
+                    ? "這份報告需要\n再試一次。"
+                    : "這份報告正在\n被寫出來。"}
+              </h3>
             </div>
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">{getStatusLabel(status)}</span>
           </div>
-          <p className="mt-4 text-sm leading-7 text-muted">{status === "needs_points" ? errorMessage || "This report is ready to continue as soon as the reading balance is restored." : status === "failed" ? errorMessage || readingFailureMessage : "A full interpretation is being composed from the held question, the chosen spread, and the revealed order of the cards."}</p>
+          <p className="mt-4 text-sm leading-7 text-muted">
+            {status === "needs_points"
+              ? errorMessage || "只要把解讀所需點數補回來，這份報告就能接著完成。"
+              : status === "failed"
+                ? errorMessage || readingFailureMessage
+                : "完整解讀正在根據目前問題、所選牌陣與翻牌順序逐步生成。"}
+          </p>
           <div className="mt-5 rounded-[1.35rem] border border-white/10 bg-black/18 p-4 sm:rounded-[1.45rem]">
             <div className="flex items-center gap-3">
               <span className="h-2.5 w-2.5 rounded-full bg-brand-strong motion-safe:animate-[altar-pulse_2.2s_ease-in-out_infinite]" />
-              <p className="text-sm text-card-foreground">{status === "needs_points" ? `Available now: ${pointsState?.available ?? 0} pts. This reading needs ${pointsState?.required ?? 0} pts to continue.` : status === "failed" ? "The spread is still intact and can be sent through again." : "The reading record will stay attached to this session once it settles."}</p>
+              <p className="text-sm text-card-foreground">
+                {status === "needs_points"
+                  ? `目前可用 ${pointsState?.available ?? 0} 點；這份解讀還需要 ${pointsState?.required ?? 0} 點才能繼續。`
+                  : status === "failed"
+                    ? "牌陣仍然完整，隨時可以再重新送出一次。"
+                    : "一旦完成，這份解讀紀錄就會綁定在目前這個 session 上。"}
+              </p>
             </div>
           </div>
           <div className="mt-6 grid gap-3">
             {status === "needs_points" ? (
               <>
-                <Link href={pointsState?.topUpHref ?? "/points?intent=reading&returnTo=%2Freading"} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">Add points for this reading</Link>
-                <Link href="/reveal" className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">Back to reveal</Link>
+                <Link href={pointsState?.topUpHref ?? "/points?intent=reading&returnTo=%2Freading"} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">為這份解讀補點（Add points for this reading）</Link>
+                <Link href="/reveal" className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">回到翻牌（Back to reveal）</Link>
               </>
             ) : status === "failed" ? (
               <>
-                <button type="button" onClick={() => void runGenerateReading(true)} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">Try the reading again</button>
-                <Link href="/reveal" className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">Return to reveal</Link>
+                <button type="button" onClick={() => void runGenerateReading(true)} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">再試一次解讀（Try the reading again）</button>
+                <Link href="/reveal" className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">回到翻牌（Return to reveal）</Link>
               </>
             ) : null}
           </div>
@@ -293,12 +352,12 @@ export function ReadingScreen() {
       <ReadingFollowupPanel canOpen={status === "ready" && Boolean(activeReading)} />
 
       <div className="rounded-[1.8rem] border border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(185,144,93,0.12),rgba(185,144,93,0.04))] p-5 motion-safe:[animation:section-rise_1060ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.95rem]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">Next step</p>
-        <h3 className="mt-3 font-display text-[1.8rem] leading-[0.98] text-card-foreground">Keep the thread,<br />or return with a cleaner question.</h3>
-        <p className="mt-4 text-sm leading-7 text-foreground/74">{status === "ready" ? activeReading?.closingReminder || "The report is complete for now. Keep the line that feels truest, and return only when the next question is cleaner." : status === "needs_points" ? "You can restore points here and return directly to this same report, without replaying the ritual." : "The CTA below stays simple while the report is composing or waiting to be tried again."}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">下一步 / Next step</p>
+        <h3 className="mt-3 font-display text-[1.8rem] leading-[0.98] text-card-foreground">把脈絡留住，<br />或帶著更清楚的問題再回來。</h3>
+        <p className="mt-4 text-sm leading-7 text-foreground/74">{status === "ready" ? activeReading?.closingReminder || "這份報告目前已完整。留住那條最真實的線，等下一個問題更清楚時再回來。" : status === "needs_points" ? "你可以先在這裡補點，然後直接回到同一份報告，不需要重跑整段儀式。" : "在報告完成前，這裡會先保持簡單，方便你稍後再續接。"}</p>
         <div className="mt-6 grid gap-3">
-          <button type="button" onClick={handleStartAgain} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">Start a new reading</button>
-          <Link href={record && session?.saveToHistory ? `/history/${record.id}` : "/history"} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">{record && session?.saveToHistory ? "View this archive" : "Open archive"}</Link>
+          <button type="button" onClick={handleStartAgain} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">開始新的解讀（Start a new reading）</button>
+          <Link href={record && session?.saveToHistory ? `/history/${record.id}` : "/history"} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">{record && session?.saveToHistory ? "查看這份紀錄（View this archive）" : "打開紀錄（Open archive）"}</Link>
         </div>
       </div>
     </section>

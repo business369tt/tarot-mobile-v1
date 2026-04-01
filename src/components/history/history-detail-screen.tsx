@@ -14,6 +14,9 @@ export function HistoryDetailScreen({
       <div className="relative overflow-hidden rounded-[1.9rem] border border-white/10 bg-[linear-gradient(180deg,rgba(21,27,41,0.98),rgba(12,15,24,0.96))] p-5 shadow-[var(--shadow-soft)] sm:rounded-[2rem] sm:p-6">
         <div className="pointer-events-none absolute right-[-4rem] top-[-3rem] h-36 w-36 rounded-full bg-[radial-gradient(circle,_rgba(185,144,93,0.18),_transparent_68%)] blur-3xl" />
         <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">
+          已儲存紀錄
+        </p>
+        <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-foreground/38">
           Saved archive
         </p>
         <h2 className="mt-4 font-display text-[2.05rem] leading-[0.94] text-card-foreground sm:text-[2.3rem]">
@@ -29,10 +32,10 @@ export function HistoryDetailScreen({
             {record.categoryLabel}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">
-            {record.followupCount} follow-up{record.followupCount === 1 ? "" : "s"}
+            {`${record.followupCount} 則追問 / ${record.followupCount} follow-up${record.followupCount === 1 ? "" : "s"}`}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">
-            {record.totalSpentPoints} pts
+            {`${record.totalSpentPoints} 點 / pts`}
           </span>
         </div>
       </div>
@@ -41,7 +44,7 @@ export function HistoryDetailScreen({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/42">
-              Original question
+              原始問題 / Original question
             </p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">
               &ldquo;{reading.question}&rdquo;
@@ -56,23 +59,23 @@ export function HistoryDetailScreen({
         <div className="mt-5 grid grid-cols-3 gap-3">
           <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
             <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-              Reading
+              解讀 / Reading
             </p>
             <p className="mt-2 text-lg font-semibold text-card-foreground">
-              {record.readingSpentPoints} pts
+              {`${record.readingSpentPoints} 點`}
             </p>
           </div>
           <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
             <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-              Follow-up
+              追問 / Follow-up
             </p>
             <p className="mt-2 text-lg font-semibold text-card-foreground">
-              {record.followupSpentPoints} pts
+              {`${record.followupSpentPoints} 點`}
             </p>
           </div>
           <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
             <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-              Last touched
+              最後更新 / Last touched
             </p>
             <p className="mt-2 text-sm font-semibold leading-6 text-card-foreground">
               {record.updatedLabel}
@@ -85,15 +88,15 @@ export function HistoryDetailScreen({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Three-card spread
+              三張牌陣 / Three-card spread
             </p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              The exact spread that shaped this report.
+              這就是形塑這份報告的原始牌陣。 / The exact spread that shaped this report.
             </p>
           </div>
 
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-            Full view
+            完整展開 / Full view
           </span>
         </div>
 
@@ -142,17 +145,17 @@ export function HistoryDetailScreen({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Follow-up timeline
+              追問時間線 / Follow-up timeline
             </p>
             <h3 className="mt-3 font-display text-[1.8rem] leading-[0.98] text-card-foreground">
-              The thread that
+              後來一路
               <br />
-              continued afterward.
+              延續下去的脈絡。
             </h3>
           </div>
 
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-            {record.followupCount} entries
+            {`${record.followupCount} 筆 / entries`}
           </span>
         </div>
 
@@ -166,7 +169,7 @@ export function HistoryDetailScreen({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-strong">
-                      Follow-up {index + 1}
+                      {`第 ${index + 1} 則追問 / Follow-up ${index + 1}`}
                     </p>
                     <h4 className="mt-3 text-[1.05rem] font-semibold leading-7 text-card-foreground">
                       {followup.prompt}
@@ -174,7 +177,7 @@ export function HistoryDetailScreen({
                   </div>
 
                   <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-                    {followup.costPoints} pts
+                    {`${followup.costPoints} 點 / pts`}
                   </span>
                 </div>
 
@@ -198,8 +201,7 @@ export function HistoryDetailScreen({
         ) : (
           <div className="mt-6 rounded-[1.45rem] border border-white/10 bg-black/18 p-5">
             <p className="text-sm leading-7 text-muted">
-              This report stayed in its original shape. No follow-up thread was added
-              after the first answer settled.
+              這份報告保留在最初的形狀裡。第一輪答案完成後，沒有再往下延伸新的追問脈絡。
             </p>
           </div>
         )}
@@ -210,13 +212,13 @@ export function HistoryDetailScreen({
           href="/history"
           className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong sm:rounded-[1.4rem]"
         >
-          Back to archive
+          回到紀錄（Back to archive）
         </Link>
         <Link
           href="/question"
           className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] sm:rounded-[1.4rem]"
         >
-          Begin a new question
+          開始新的提問（Begin a new question）
         </Link>
       </div>
     </section>

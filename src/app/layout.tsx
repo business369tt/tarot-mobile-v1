@@ -3,11 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tarot Mobile V1",
-    template: "%s | Tarot Mobile V1",
+    default: "塔羅行動版 Tarot Mobile V1",
+    template: "%s | 塔羅行動版 Tarot Mobile V1",
   },
   description:
-    "A mobile-first tarot reading flow with LINE identity, points, archive, and MiniMax-powered readings.",
+    "以繁體中文為主的行動版塔羅解讀流程，整合 LINE 身份、點數、紀錄與 MiniMax 解讀。",
 };
 
 export const viewport: Viewport = {

@@ -33,7 +33,7 @@ function isZeroDecimalCurrency(currency: string) {
 export function formatCurrencyMinor(amountMinor: number, currency: string) {
   const divisor = isZeroDecimalCurrency(currency) ? 1 : 100;
 
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("zh-TW", {
     style: "currency",
     currency: currency.toUpperCase(),
     maximumFractionDigits: divisor === 1 ? 0 : 2,
@@ -64,8 +64,8 @@ export const pointPackages: PointPackage[] = [
   {
     id: "reading-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_PRIMARY, 5),
-    label: "Reading refill",
-    caption: "Enough to complete this report and leave a little room for the next return.",
+    label: "解讀補點 / Reading refill",
+    caption: "足夠完成這份報告，並替下一次回來多留一點空間。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_PRIMARY_AMOUNT_MINOR,
       19000,
@@ -79,8 +79,8 @@ export const pointPackages: PointPackage[] = [
   {
     id: "extended-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_SECONDARY, 12),
-    label: "Quiet reserve",
-    caption: "A steadier balance for this reading and the next few sessions after it.",
+    label: "安靜儲備 / Quiet reserve",
+    caption: "替這次解讀與接下來幾次 session 保留更穩定的點數餘額。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_SECONDARY_AMOUNT_MINOR,
       39000,

@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect } from "react";
 import { TarotCardBack, TarotCardFace } from "@/components/flow/tarot-card";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
+import {
+  getCardRoleDisplayMeta,
+  getOrientationDisplayMeta,
+} from "@/lib/mock-tarot-data";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 const revealRhythm = [
-  "The first turn sets the opening tone. Let it land before reaching for meaning.",
-  "Stay with the second card a moment longer. It usually clarifies the pressure underneath.",
-  "The final card completes the shape. Read the full spread only after the scene is fully open.",
+  "第一張翻開時，只要先接住它的開場氣氛，不急著立刻解釋。",
+  "第二張牌請多停留一會，它通常會把底下真正的壓力說清楚。",
+  "最後一張會把整體形狀補齊，等整個場景打開後再一起讀它。",
 ];
 
 export function RevealScreen() {
@@ -22,7 +26,7 @@ export function RevealScreen() {
   const allRevealed = revealedCount === 3;
   const nextCard = selectedCards[revealedCount];
   const rhythmLine = allRevealed
-    ? "All three cards are now face up. Hold the full shape of the spread before opening the report."
+    ? "三張牌都已經翻開了。先在身體裡接住整體形狀，再打開報告。"
     : revealRhythm[revealedCount] ?? revealRhythm[revealRhythm.length - 1];
 
   useEffect(() => {
@@ -64,24 +68,33 @@ export function RevealScreen() {
       <section className="flex flex-1 flex-col gap-4 px-4 pb-5 pt-4 sm:gap-5 sm:px-5 sm:pb-6 sm:pt-5">
         <div className="rounded-[1.85rem] border border-white/10 bg-white/[0.04] p-5 motion-safe:[animation:section-rise_620ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[2rem] sm:p-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-            Reveal is waiting
+            翻牌尚未就緒
           </p>
-          <h2 className="mt-4 font-display text-[2rem] leading-[0.94] text-card-foreground">
-            Three chosen cards
-            <br />
-            are needed first.
+          <h2 className="mt-4">
+            <span className="block font-display text-[2rem] leading-[0.94] text-card-foreground">
+              你需要先選好
+              <br />
+              三張牌。
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-foreground/44">
+              Three chosen cards are needed first.
+            </span>
           </h2>
-          <p className="mt-4 text-sm leading-7 text-muted">
-            Return to the draw surface and let the spread settle into its three
-            positions before opening the reveal scene.
-          </p>
+          <div className="mt-4 space-y-2">
+            <p className="text-sm leading-7 text-muted">
+              先回到抽牌畫面，讓牌陣穩定落入三個位置，再打開翻牌場景。
+            </p>
+            <p className="text-xs leading-6 text-foreground/42">
+              Return to the draw surface and let the spread settle into its three positions before opening the reveal scene.
+            </p>
+          </div>
         </div>
 
         <Link
           href="/draw"
           className="mt-auto min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]"
         >
-          Return to the draw
+          回到抽牌（Return to the draw）
         </Link>
       </section>
     );
@@ -93,12 +106,17 @@ export function RevealScreen() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Reveal sequence
+              翻牌順序
             </p>
-            <h2 className="mt-3 font-display text-[1.6rem] leading-[1] text-card-foreground sm:text-[1.75rem] sm:leading-[0.98]">
-              Let the spread
-              <br />
-              turn slowly.
+            <h2 className="mt-3">
+              <span className="block font-display text-[1.6rem] leading-[1] text-card-foreground sm:text-[1.75rem] sm:leading-[0.98]">
+                讓整個牌陣
+                <br />
+                慢慢翻開。
+              </span>
+              <span className="mt-2 block text-sm leading-6 text-foreground/44">
+                Let the spread turn slowly.
+              </span>
             </h2>
           </div>
 
@@ -113,6 +131,7 @@ export function RevealScreen() {
           {selectedCards.map((card, index) => {
             const isRevealed = index < revealedCount;
             const isNext = index === revealedCount && !allRevealed;
+            const roleDisplay = getCardRoleDisplayMeta(card.role);
 
             return (
               <div
@@ -126,10 +145,14 @@ export function RevealScreen() {
                 }`}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-strong">
-                  {card.role}
+                  {roleDisplay.labelZh}
                 </p>
                 <p className="mt-2 text-[11px] leading-5 text-muted">
-                  {isRevealed ? "Revealed" : isNext ? "Next to turn" : "Waiting"}
+                  {isRevealed
+                    ? "已翻開 / Revealed"
+                    : isNext
+                      ? "下一張 / Next to turn"
+                      : "等待中 / Waiting"}
                 </p>
               </div>
             );
@@ -146,17 +169,17 @@ export function RevealScreen() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-foreground/42">
-                Turning chamber
+                翻牌空間
               </p>
               <p className="mt-2 text-sm leading-6 text-muted">
                 {allRevealed
-                  ? "The three-card constellation is fully open."
-                  : `The ${nextCard?.role.toLowerCase() ?? "next"} card is about to turn.`}
+                  ? "三張牌已經完整展開。"
+                  : `${getCardRoleDisplayMeta(nextCard?.role ?? "Threshold").labelZh} 即將翻開。`}
               </p>
             </div>
 
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-              {allRevealed ? "complete" : "in sequence"}
+              {allRevealed ? "完成 / Complete" : "依序 / In sequence"}
             </span>
           </div>
 
@@ -195,12 +218,12 @@ export function RevealScreen() {
 
           <div className="mt-5 rounded-[1.35rem] border border-white/10 bg-black/18 p-4 sm:mt-6 sm:rounded-[1.45rem]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-foreground/42">
-              Reading pause
+              讀牌停頓
             </p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">
               {allRevealed
-                ? "Read the spread first with your body before reading it with language. The report below will hold the fuller interpretation."
-                : "Let each turn finish before looking for the whole answer. The scene is designed to slow the reading down."}
+                ? "先用身體感受整個牌陣，再用語言閱讀它。下方報告會承接更完整的解釋。"
+                : "每次翻開都先讓它停穩，再去找整體答案。這個場景的設計，就是要讓你慢下來。"}
             </p>
           </div>
         </div>
@@ -210,23 +233,23 @@ export function RevealScreen() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-              Revealed order
+              翻開順序
             </p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Each card keeps its role, orientation, and reading position below.
+              每張牌都會保留自己的位置、牌位與正逆狀態。
             </p>
           </div>
 
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-            Slow read
+            慢讀 / Slow read
           </span>
         </div>
 
         <div className="mt-5 grid gap-3">
           {selectedCards.map((card, index) => {
             const isRevealed = index < revealedCount;
-            const orientationLabel =
-              card.orientation === "upright" ? "Upright" : "Reversed";
+            const orientationDisplay = getOrientationDisplayMeta(card.orientation);
+            const roleDisplay = getCardRoleDisplayMeta(card.role);
 
             return (
               <div
@@ -240,18 +263,22 @@ export function RevealScreen() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-strong">
-                      {card.role}
+                      {roleDisplay.labelZh}
                     </p>
                     <p className="mt-2 text-sm text-card-foreground">
-                      {isRevealed ? card.name : "Waiting to turn"}
+                      {isRevealed ? card.name : "等待翻開 / Waiting to turn"}
                     </p>
                     <p className="mt-2 text-[11px] leading-5 text-muted">
-                      {isRevealed ? card.roleSubtitle : "The position remains sealed until its turn."}
+                      {isRevealed
+                        ? roleDisplay.subtitleZh
+                        : "在輪到之前，這個位置會先保持封印。 / The position remains sealed until its turn."}
                     </p>
                   </div>
 
                   <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
-                    {isRevealed ? orientationLabel : "sealed"}
+                    {isRevealed
+                      ? `${orientationDisplay.zh} / ${orientationDisplay.en}`
+                      : "封存 / Sealed"}
                   </span>
                 </div>
               </div>
@@ -266,7 +293,9 @@ export function RevealScreen() {
           onClick={allRevealed ? handleContinue : revealNextCard}
           className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]"
         >
-          {allRevealed ? "Open the report" : "Turn next card"}
+          {allRevealed
+            ? "打開報告（Open the report）"
+            : "翻開下一張（Turn next card）"}
         </button>
 
         <button
@@ -274,7 +303,7 @@ export function RevealScreen() {
           onClick={resetReveal}
           className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]"
         >
-          Restart reveal
+          重新翻牌（Restart reveal）
         </button>
       </div>
     </section>

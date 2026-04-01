@@ -1,18 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { mapRecordToFollowupRecord } from "@/lib/followup-record";
-import { getCategoryMeta } from "@/lib/mock-tarot-data";
+import {
+  getCardDisplayMeta,
+  getCategoryDisplayMeta,
+  getOrientationDisplayMeta,
+} from "@/lib/mock-tarot-data";
 import {
   buildReadingSections,
   mapRecordToReadingRecord,
 } from "@/lib/reading-record";
 
-const historyDateFormatter = new Intl.DateTimeFormat("en-US", {
+const historyDateFormatter = new Intl.DateTimeFormat("zh-TW", {
   month: "short",
   day: "numeric",
   year: "numeric",
 });
 
-const historyDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+const historyDateTimeFormatter = new Intl.DateTimeFormat("zh-TW", {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -133,7 +137,7 @@ function formatHistoryDateTime(value: Date) {
 
 function mapListItem(record: HistoryListQueryRecord): HistoryListItem {
   const reading = mapRecordToReadingRecord(record);
-  const categoryMeta = getCategoryMeta(reading.category);
+  const categoryMeta = getCategoryDisplayMeta(reading.category);
   const followupCount = record.followupRecords.length;
   const followupSpentPoints = record.followupRecords.reduce(
     (sum: number, followup: HistoryListFollowupRecord) =>
@@ -145,12 +149,12 @@ function mapListItem(record: HistoryListQueryRecord): HistoryListItem {
     id: reading.id,
     question: reading.question,
     category: reading.category,
-    categoryLabel: categoryMeta.label,
-    categoryDescription: categoryMeta.description,
+    categoryLabel: `${categoryMeta.labelZh} / ${categoryMeta.labelEn}`,
+    categoryDescription: `${categoryMeta.descriptionZh} / ${categoryMeta.descriptionEn}`,
     cardsSummary: reading.cardsSnapshot.map((card) => ({
       id: card.id,
-      name: card.name,
-      orientation: card.orientation === "upright" ? "Upright" : "Reversed",
+      name: `${getCardDisplayMeta(card.id).nameZh} / ${getCardDisplayMeta(card.id).nameEn}`,
+      orientation: `${getOrientationDisplayMeta(card.orientation).zh} / ${getOrientationDisplayMeta(card.orientation).en}`,
     })),
     createdAt: reading.createdAt,
     updatedAt: reading.updatedAt,
@@ -166,7 +170,7 @@ function mapListItem(record: HistoryListQueryRecord): HistoryListItem {
 function mapDetailRecord(record: NonNullable<HistoryDetailQueryRecord>): HistoryDetailRecord {
   const reading = mapRecordToReadingRecord(record);
   const followups = record.followupRecords.map(mapRecordToFollowupRecord);
-  const categoryMeta = getCategoryMeta(reading.category);
+  const categoryMeta = getCategoryDisplayMeta(reading.category);
   const followupSpentPoints = followups.reduce(
     (sum: number, followup: HistoryDetailFollowupRecord) =>
       sum + followup.costPoints,
@@ -176,8 +180,8 @@ function mapDetailRecord(record: NonNullable<HistoryDetailQueryRecord>): History
   return {
     reading,
     followups,
-    categoryLabel: categoryMeta.label,
-    categoryDescription: categoryMeta.description,
+    categoryLabel: `${categoryMeta.labelZh} / ${categoryMeta.labelEn}`,
+    categoryDescription: `${categoryMeta.descriptionZh} / ${categoryMeta.descriptionEn}`,
     readingSections: buildReadingSections(reading),
     createdLabel: formatHistoryDateTime(new Date(reading.createdAt)),
     updatedLabel: formatHistoryDateTime(new Date(reading.updatedAt)),

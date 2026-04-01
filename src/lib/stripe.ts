@@ -38,4 +38,4 @@ export function getStripeWebhookSecret() {
   return getRequiredEnv("STRIPE_WEBHOOK_SECRET");
 }
 
-export const stripeProviderLabel = "Stripe Checkout";
+export const stripeProviderLabel = "Stripe 結帳 / Stripe Checkout";

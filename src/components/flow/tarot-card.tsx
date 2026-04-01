@@ -1,4 +1,9 @@
-import type { SelectedTarotCard } from "@/lib/mock-tarot-data";
+import {
+  getCardDisplayMeta,
+  getCardRoleDisplayMeta,
+  getOrientationDisplayMeta,
+  type SelectedTarotCard,
+} from "@/lib/mock-tarot-data";
 
 type CardVariant = "fan" | "compact" | "report" | "stage";
 
@@ -57,7 +62,7 @@ export function TarotCardBack({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.16),_transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
       <div className="relative flex h-full flex-col justify-between rounded-[inherit] border border-white/8 px-1 py-1">
         <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.24em] text-foreground/34">
-          <span>Arcana</span>
+          <span>阿爾克那 / Arcana</span>
           <span>{String(order).padStart(2, "0")}</span>
         </div>
 
@@ -70,7 +75,7 @@ export function TarotCardBack({
         <div className="space-y-2">
           <div className="h-px w-full bg-[linear-gradient(90deg,transparent,rgba(229,192,142,0.3),transparent)]" />
           <p className="text-center text-[9px] font-semibold uppercase tracking-[0.24em] text-foreground/44">
-            Choose gently
+            輕輕選擇 / Choose gently
           </p>
         </div>
       </div>
@@ -87,11 +92,18 @@ export function TarotCardFace({
   variant: CardVariant;
   showNarrative?: boolean;
 }>) {
-  const orientationLabel =
-    card.orientation === "upright" ? "Upright" : "Reversed";
-  const orientationText =
-    card.orientation === "upright" ? card.uprightText : card.reversedText;
-  const visibleKeywords = card.keywords.slice(
+  const display = getCardDisplayMeta(card.id);
+  const roleDisplay = getCardRoleDisplayMeta(card.role);
+  const orientationDisplay = getOrientationDisplayMeta(card.orientation);
+  const orientationTextZh =
+    card.orientation === "upright" ? display.uprightZh : display.reversedZh;
+  const orientationTextEn =
+    card.orientation === "upright" ? display.uprightEn : display.reversedEn;
+  const visibleKeywords = display.keywordsZh.slice(
+    0,
+    variant === "compact" ? 1 : variant === "report" ? 2 : 3,
+  );
+  const visibleKeywordEn = display.keywordsEn.slice(
     0,
     variant === "compact" ? 1 : variant === "report" ? 2 : 3,
   );
@@ -111,13 +123,19 @@ export function TarotCardFace({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-brand-strong">
-              {card.arcana}
+              {display.arcanaZh}
+            </p>
+            <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-foreground/42">
+              {display.arcanaEn}
             </p>
             <h3
               className={`mt-2 font-display leading-none text-card-foreground ${titleClass[variant]}`}
             >
-              {card.name}
+              {display.nameZh}
             </h3>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/42">
+              {display.nameEn}
+            </p>
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-foreground/56">
@@ -127,27 +145,40 @@ export function TarotCardFace({
 
         <div className="mt-4 flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.2em]">
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-foreground/60">
-            {orientationLabel}
+            {`${orientationDisplay.zh} / ${orientationDisplay.en}`}
           </span>
-          <span className="text-brand-strong">{card.role}</span>
+          <span className="text-right text-brand-strong">
+            <span className="block text-[10px]">{roleDisplay.labelZh}</span>
+            <span className="mt-1 block text-[8px] uppercase tracking-[0.14em] text-brand-strong/70">
+              {roleDisplay.labelEn}
+            </span>
+          </span>
         </div>
 
-        <p className={`mt-4 text-foreground/76 ${toneClass[variant]}`}>
-          {card.tone}
-        </p>
+        <div className={`mt-4 text-foreground/76 ${toneClass[variant]}`}>
+          <p>{display.toneZh}</p>
+          <p className="mt-1 text-[9px] leading-5 text-foreground/42 sm:text-[10px]">
+            {display.toneEn}
+          </p>
+        </div>
 
         {showNarrative ? (
-          <p className="mt-3 text-sm leading-6 text-muted">{orientationText}</p>
+          <div className="mt-3 space-y-1">
+            <p className="text-sm leading-6 text-muted">{orientationTextZh}</p>
+            <p className="text-[11px] leading-5 text-foreground/42">
+              {orientationTextEn}
+            </p>
+          </div>
         ) : null}
 
         <div className="mt-auto pt-4">
           <div className="flex flex-wrap gap-2">
-            {visibleKeywords.map((keyword) => (
+            {visibleKeywords.map((keyword, index) => (
               <span
-                key={keyword}
-                className={`rounded-full border border-white/10 bg-white/[0.04] uppercase text-foreground/54 ${keywordClass}`}
+                key={`${keyword}-${visibleKeywordEn[index]}`}
+                className={`rounded-full border border-white/10 bg-white/[0.04] text-foreground/54 ${keywordClass}`}
               >
-                {keyword}
+                {`${keyword} / ${visibleKeywordEn[index]}`}
               </span>
             ))}
           </div>

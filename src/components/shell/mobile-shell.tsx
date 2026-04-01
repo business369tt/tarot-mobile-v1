@@ -22,12 +22,12 @@ export function MobileShell({
   const { isHydrated, isAuthenticated, displayName, initials } = useAuth();
   const { session, ownsCurrentSession } = useTarotFlow();
   const identityLabel = !isHydrated
-    ? "Restoring profile"
+    ? "正在還原身份"
     : isAuthenticated
-      ? displayName ?? "LINE profile"
-      : "Guest";
+      ? displayName ?? "LINE 身份"
+      : "訪客模式";
   const ownershipLabel =
-    session && ownsCurrentSession ? "Owner" : session ? "Viewer" : "Open";
+    session && ownsCurrentSession ? "持有中" : session ? "檢視中" : "開放中";
 
   return (
     <div className="relative isolate min-h-[100svh] overflow-hidden bg-background text-foreground">
@@ -49,11 +49,11 @@ export function MobileShell({
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.12),_transparent_28%),radial-gradient(circle_at_bottom,_rgba(52,72,115,0.22),_transparent_28%)]" />
 
               <div className="relative flex items-center justify-between px-5 pb-2 pt-[calc(env(safe-area-inset-top)+14px)] text-[9px] font-medium uppercase tracking-[0.28em] text-foreground/42 sm:px-6 sm:pt-5 sm:text-[10px] sm:tracking-[0.32em]">
-                <span>Tarot Mobile V1</span>
+                <span>塔羅行動版 / Tarot Mobile V1</span>
                 <div className="flex items-center gap-2">
-                  <span>{currentStatus.short}</span>
+                  <span>{`${currentStatus.short.zh} / ${currentStatus.short.en}`}</span>
                   <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 text-[8px] tracking-[0.16em] text-foreground/54 sm:text-[9px]">
-                    {isAuthenticated ? "LINE" : "Guest"}
+                    {isAuthenticated ? "LINE / Auth" : "訪客 / Guest"}
                   </span>
                 </div>
               </div>
@@ -62,14 +62,27 @@ export function MobileShell({
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-brand-strong">
-                      {currentStatus.label}
+                      {currentStatus.label.zh}
                     </p>
-                    <h1 className="mt-3 font-display text-[clamp(1.7rem,7.4vw,2.1rem)] font-semibold leading-[0.96] tracking-tight text-foreground">
-                      {currentRoute.shellTitle}
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-foreground/38">
+                      {currentStatus.label.en}
+                    </p>
+                    <h1 className="mt-3">
+                      <span className="block font-display text-[clamp(1.7rem,7.4vw,2.1rem)] font-semibold leading-[0.96] tracking-tight text-foreground">
+                        {currentRoute.shellTitle.zh}
+                      </span>
+                      <span className="mt-2 block text-[12px] uppercase tracking-[0.18em] text-foreground/42 sm:text-[13px]">
+                        {currentRoute.shellTitle.en}
+                      </span>
                     </h1>
-                    <p className="mt-3 max-w-[16.5rem] text-[13px] leading-6 text-muted sm:max-w-[17rem] sm:text-sm">
-                      {currentRoute.shellSubtitle}
-                    </p>
+                    <div className="mt-3 max-w-[16.5rem] space-y-2 sm:max-w-[17rem]">
+                      <p className="text-[13px] leading-6 text-muted sm:text-sm">
+                        {currentRoute.shellSubtitle.zh}
+                      </p>
+                      <p className="text-xs leading-6 text-foreground/42">
+                        {currentRoute.shellSubtitle.en}
+                      </p>
+                    </div>
                   </div>
 
                   <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-[0.16em] text-foreground/56 sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.18em]">
@@ -88,10 +101,10 @@ export function MobileShell({
                       </p>
                       <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/46">
                         {!isHydrated
-                          ? "Restoring identity"
+                          ? "還原中 / Restoring"
                           : isAuthenticated
-                            ? "Linked identity"
-                            : "Anonymous entry"}
+                            ? "已連結身份 / Linked"
+                            : "匿名進入 / Anonymous"}
                       </p>
                     </div>
                   </div>
@@ -125,8 +138,11 @@ export function MobileShell({
                             : "border-white/6 bg-white/[0.02] text-foreground/44 hover:border-white/10 hover:text-foreground/72"
                         }`}
                       >
-                        <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.22em]">
-                          {route.label}
+                        <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-card-foreground sm:text-[10px] sm:tracking-[0.22em]">
+                          {route.label.zh}
+                        </span>
+                        <span className="mt-1 block text-[8px] uppercase tracking-[0.12em] text-current/70">
+                          {route.label.en}
                         </span>
                         <span
                           className={`mx-auto mt-2 block h-1 w-5 rounded-full sm:w-6 ${

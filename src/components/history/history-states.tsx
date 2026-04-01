@@ -2,8 +2,11 @@ import Link from "next/link";
 
 export function HistoryStateCard(props: {
   eyebrow: string;
+  eyebrowEn?: string;
   title: string;
+  titleEn?: string;
   body: string;
+  bodyEn?: string;
   primaryHref: string;
   primaryLabel: string;
   secondaryHref?: string;
@@ -15,12 +18,27 @@ export function HistoryStateCard(props: {
         <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">
           {props.eyebrow}
         </p>
-        <h2 className="mt-4 font-display text-[2rem] leading-[0.96] text-card-foreground sm:text-[2.25rem]">
-          {props.title}
+        {props.eyebrowEn ? (
+          <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-foreground/38">
+            {props.eyebrowEn}
+          </p>
+        ) : null}
+        <h2 className="mt-4">
+          <span className="block font-display text-[2rem] leading-[0.96] text-card-foreground sm:text-[2.25rem]">
+            {props.title}
+          </span>
+          {props.titleEn ? (
+            <span className="mt-2 block text-sm leading-6 text-foreground/44">
+              {props.titleEn}
+            </span>
+          ) : null}
         </h2>
-        <p className="mt-4 max-w-[18rem] text-sm leading-7 text-muted">
-          {props.body}
-        </p>
+        <div className="mt-4 max-w-[18rem] space-y-2">
+          <p className="text-sm leading-7 text-muted">{props.body}</p>
+          {props.bodyEn ? (
+            <p className="text-xs leading-6 text-foreground/42">{props.bodyEn}</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-auto grid gap-3">

@@ -4,14 +4,15 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { defaultQuestion } from "@/lib/mock-tarot-data";
+import { defaultQuestionDisplay, getCategoryDisplayMeta } from "@/lib/mock-tarot-data";
 
 export function RitualScreen() {
   const router = useRouter();
   const { session, sessionCategoryMeta, beginShuffle } = useTarotFlow();
   const [isShuffling, setIsShuffling] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
-  const focusQuestion = session?.question.trim() || defaultQuestion;
+  const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
+  const categoryDisplay = getCategoryDisplayMeta(sessionCategoryMeta.id);
 
   useEffect(() => {
     if (!isShuffling) {
@@ -38,15 +39,15 @@ export function RitualScreen() {
     <section className="flex flex-1 flex-col gap-4 px-4 pb-5 pt-4 sm:gap-5 sm:px-5 sm:pb-6 sm:pt-5">
       <div className="rounded-[1.7rem] border border-white/10 bg-white/[0.04] p-4 motion-safe:[animation:section-rise_620ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.85rem] sm:p-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-          Gather the focus
+          收攏焦點
         </p>
         <p className="mt-4 text-sm leading-7 text-card-foreground">
           &ldquo;{focusQuestion}&rdquo;
         </p>
         <div className="mt-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-foreground/48">
-          <span>{sessionCategoryMeta.label}</span>
+          <span>{`${categoryDisplay.labelZh} / ${categoryDisplay.labelEn}`}</span>
           <span className="h-1 w-1 rounded-full bg-white/20" />
-          <span>Three-card spread</span>
+          <span>三張牌陣 / Three-card spread</span>
         </div>
       </div>
 
@@ -90,12 +91,12 @@ export function RitualScreen() {
 
           <div className="max-w-[16.5rem] text-center sm:max-w-[17rem]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/42">
-              Ritual direction
+              儀式方向
             </p>
             <p className="mt-3 text-sm leading-7 text-muted">
               {isShuffling
-                ? "Stay with the pause. The deck is loosening into the spread."
-                : "Let the question settle in the body before the cards are asked to answer it."}
+                ? "先待在這個停頓裡。牌組正在慢慢鬆開，準備落成牌陣。"
+                : "在請牌回答之前，先讓問題在身體裡沉一下。"}
             </p>
           </div>
         </div>
@@ -103,9 +104,9 @@ export function RitualScreen() {
 
       <div className="grid gap-3 rounded-[1.7rem] border border-white/10 bg-white/[0.04] p-4 motion-safe:[animation:section-rise_900ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.85rem] sm:p-5">
         {[
-          "Take one slower breath than feels natural.",
-          "Let the strongest word in your question come forward.",
-          "Begin only when the room feels quieter than before.",
+          "呼吸比你平常再慢一點。",
+          "讓問題裡最重的那個字先浮出來。",
+          "只有當整個空間比剛才更安靜時，再開始。",
         ].map((line, index) => (
           <div
             key={line}
@@ -125,7 +126,9 @@ export function RitualScreen() {
         disabled={isShuffling}
         className="mt-auto min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong disabled:cursor-wait disabled:opacity-85 motion-reduce:transition-none motion-safe:[animation:section-rise_1020ms_cubic-bezier(.22,1,.36,1)] sm:rounded-[1.4rem]"
       >
-        {isShuffling ? "Deck in motion" : "Begin shuffling"}
+        {isShuffling
+          ? "牌組正在移動（Deck in motion）"
+          : "開始洗牌（Begin shuffling）"}
       </button>
     </section>
   );

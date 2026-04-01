@@ -1,4 +1,5 @@
 import {
+  getCardDisplayMeta,
   getCategoryMeta,
   type SelectedTarotCard,
   type TarotCategoryId,
@@ -55,11 +56,11 @@ export type ReadingSectionView = {
 export const defaultReadingStatus: ReadingRecordStatus = "idle";
 export const minimaxReadingSource: ReadingSource = "minimax";
 export const readingFailureMessage =
-  "The report could not settle into place just yet. Give it another quiet try.";
+  "這份報告暫時還沒穩定成形，請再安靜試一次。 / The report could not settle into place just yet. Give it another quiet try.";
 export const readingUnavailableMessage =
-  "The reading service is not available in this environment yet.";
+  "這個環境目前還無法使用解讀服務。 / The reading service is not available in this environment yet.";
 export const readingNeedsRevealMessage =
-  "The report opens only after the three-card reveal is fully complete.";
+  "三張牌完整翻開後，報告才會正式打開。 / The report opens only after the three-card reveal is fully complete.";
 const supportedCategories = ["love", "career", "self", "decision", "timing"] as const;
 
 function isCategoryId(value: unknown): value is TarotCategoryId {
@@ -276,50 +277,50 @@ export function buildReadingSections(record: ReadingRecord): ReadingSectionView[
   return [
     {
       id: "core",
-      eyebrow: "I. Question Core",
-      title: "What the reading believes this question is truly about",
+      eyebrow: "I. 問題核心 / Question Core",
+      title: "這次解讀認為你真正想問的是什麼 / What the reading believes this question is truly about",
       body: reading.questionCore,
       accent: record.cardsSnapshot[0]?.keywords[0] ?? "focus",
     },
     {
       id: "axis",
-      eyebrow: "II. Spread Axis",
-      title: "The three-card line running through the whole report",
+      eyebrow: "II. 牌陣軸線 / Spread Axis",
+      title: "貫穿整份報告的三張牌軸線 / The three-card line running through the whole report",
       body: reading.spreadAxis,
       accent: record.cardsSnapshot[1]?.keywords[0] ?? "pattern",
     },
     {
       id: "threshold",
-      eyebrow: "III. Threshold Card",
-      title: `${threshold?.name ?? "Threshold"} in its opening role`,
+      eyebrow: "III. 門檻牌 / Threshold Card",
+      title: `${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameZh} 作為開場牌位 / ${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameEn} in its opening role`,
       body: reading.cardReadings.threshold,
       accent: threshold?.keywords[1] ?? "opening",
     },
     {
       id: "mirror",
-      eyebrow: "IV. Mirror Card",
-      title: `${mirror?.name ?? "Mirror"} as the reflective pressure point`,
+      eyebrow: "IV. 映照牌 / Mirror Card",
+      title: `${getCardDisplayMeta(mirror?.id ?? "moon").nameZh} 作為映照壓力點 / ${getCardDisplayMeta(mirror?.id ?? "moon").nameEn} as the reflective pressure point`,
       body: reading.cardReadings.mirror,
       accent: mirror?.keywords[1] ?? "reflection",
     },
     {
       id: "horizon",
-      eyebrow: "V. Horizon Card",
-      title: `${horizon?.name ?? "Horizon"} as the next clean movement`,
+      eyebrow: "V. 地平牌 / Horizon Card",
+      title: `${getCardDisplayMeta(horizon?.id ?? "sun").nameZh} 指向下一個清楚動作 / ${getCardDisplayMeta(horizon?.id ?? "sun").nameEn} as the next clean movement`,
       body: reading.cardReadings.horizon,
       accent: horizon?.keywords[1] ?? "direction",
     },
     {
       id: "trend",
-      eyebrow: "VI. Near-Term Trend",
-      title: "What the next stretch of time is asking for",
+      eyebrow: "VI. 近期走向 / Near-Term Trend",
+      title: "接下來這段時間正在要求什麼 / What the next stretch of time is asking for",
       body: reading.nearTermTrend,
       accent: record.cardsSnapshot[2]?.keywords[0] ?? "timing",
     },
     {
       id: "guidance",
-      eyebrow: "VII. Concrete Guidance",
-      title: "How to move with the reading instead of against it",
+      eyebrow: "VII. 具體指引 / Concrete Guidance",
+      title: "如何順著這份解讀前進，而不是逆著它走 / How to move with the reading instead of against it",
       body: reading.concreteGuidance.join(" "),
       accent: "practice",
     },

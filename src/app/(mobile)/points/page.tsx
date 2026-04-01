@@ -40,13 +40,16 @@ export default async function PointsPage({
   if (!viewerId) {
     return (
       <PointsStateCard
-        eyebrow="Points access"
-        title="Link a profile before opening your balance."
-        body="Points stay attached to one LINE identity so every reading, follow-up, and balance movement returns to the same place."
+        eyebrow="點數入口"
+        eyebrowEn="Points access"
+        title="先連結身份，才能打開你的點數餘額。"
+        titleEn="Link a profile before opening your balance."
+        body="點數會綁定在單一 LINE 身份下，因此每次解讀、追問與點數變動都會回到同一個位置。"
+        bodyEn="Points stay attached to one LINE identity so every reading, follow-up, and balance movement returns to the same place."
         primaryHref="/auth/line"
-        primaryLabel="Continue with LINE"
+        primaryLabel="使用 LINE 繼續（Continue with LINE）"
         secondaryHref="/"
-        secondaryLabel="Back to home"
+        secondaryLabel="回到首頁（Back to home）"
       />
     );
   }
@@ -75,13 +78,20 @@ export default async function PointsPage({
   } catch {
     return (
       <PointsStateCard
-        eyebrow="Ledger unavailable"
-        title="The points ledger is quiet for a moment."
-        body="The balance is still attached to your profile, but this surface needs another pass before it opens clearly again."
+        eyebrow="點數帳本暫停"
+        eyebrowEn="Ledger unavailable"
+        title="點數帳本目前暫時無法顯示。"
+        titleEn="The points ledger is quiet for a moment."
+        body="你的點數仍然綁定在目前身份下，但這個頁面需要再重新整理一次，才能清楚開啟。"
+        bodyEn="The balance is still attached to your profile, but this surface needs another pass before it opens clearly again."
         primaryHref={getRetryHref(intent, returnTo)}
-        primaryLabel="Try again"
+        primaryLabel="再試一次（Try again）"
         secondaryHref={intent ? returnTo : "/question"}
-        secondaryLabel={intent ? "Back to reading" : "Begin a new question"}
+        secondaryLabel={
+          intent
+            ? "回到解讀（Back to reading）"
+            : "開始新的提問（Begin a new question）"
+        }
       />
     );
   }
