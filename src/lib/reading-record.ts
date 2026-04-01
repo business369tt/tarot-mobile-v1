@@ -1,4 +1,3 @@
-import type { ReadingRecord as PrismaReadingRecord } from "@prisma/client";
 import {
   getCategoryMeta,
   type SelectedTarotCard,
@@ -214,7 +213,25 @@ export function serializeStructuredTarotReading(reading: StructuredTarotReading)
   return JSON.stringify(reading);
 }
 
-export function mapRecordToReadingRecord(record: PrismaReadingRecord): ReadingRecord {
+type ReadingRecordInput = {
+  id: string;
+  sessionId: string;
+  userId: string;
+  question: string;
+  category: string;
+  cardsSnapshot: string | null;
+  fullReading: string | null;
+  model: string;
+  status: string;
+  errorMessage: string | null;
+  costPoints: number;
+  chargeRequestKey: string | null;
+  chargeTransactionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function mapRecordToReadingRecord(record: ReadingRecordInput): ReadingRecord {
   const category = isCategoryId(record.category) ? record.category : "love";
   const cardsSnapshot = normalizeCardsSnapshot(parseJson<unknown[]>(record.cardsSnapshot));
 

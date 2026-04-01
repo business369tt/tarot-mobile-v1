@@ -1,5 +1,3 @@
-import type { FollowupRecord as PrismaFollowupRecord } from "@prisma/client";
-
 export type FollowupRecordStatus =
   | "idle"
   | "needs_points"
@@ -35,8 +33,24 @@ export const followupNeedsPointsMessage =
 export const followupUnavailableMessage =
   "The follow-up service is not available in this environment yet.";
 
+type FollowupRecordInput = {
+  id: string;
+  readingRecordId: string;
+  userId: string;
+  prompt: string;
+  answer: string | null;
+  status: string;
+  model: string;
+  requestKey: string;
+  chargeTransactionId: string | null;
+  costPoints: number;
+  errorMessage: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export function mapRecordToFollowupRecord(
-  record: PrismaFollowupRecord,
+  record: FollowupRecordInput,
 ): FollowupRecord {
   return {
     id: record.id,

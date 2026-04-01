@@ -1,4 +1,3 @@
-import type { TarotSession as PrismaTarotSessionRecord } from "@prisma/client";
 import {
   buildSelectedCard,
   buildSpread,
@@ -208,7 +207,22 @@ export function serializeTarotCards(cards: TarotCard[] | SelectedTarotCard[]) {
   return JSON.stringify(cards);
 }
 
-export function mapRecordToTarotSession(record: PrismaTarotSessionRecord): TarotSession {
+type TarotSessionRecordInput = {
+  id: string;
+  ownerId: string | null;
+  currentStep: string;
+  question: string;
+  category: string;
+  saveToHistory: boolean;
+  spreadCardsJson: string | null;
+  selectedCardsJson: string | null;
+  revealed: number;
+  ritualStartedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function mapRecordToTarotSession(record: TarotSessionRecordInput): TarotSession {
   return normalizeTarotSession({
     sessionId: record.id,
     ownerViewerId: record.ownerId,
