@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                     String             @id @default(cuid())
+  name                   String?
+  email                  String?            @unique
+  emailVerified          DateTime?
+  image                  String?
+  points                 Int                @default(0)
+  accounts               Account[]
+  dailyCheckIns          DailyCheckIn[]
+  followupRecords        FollowupRecord[]
+  inviteProfile          InviteProfile?
+  inviteReferralReceived InviteReferral?   @relation("InviteReferralReceived")
+  inviteReferralsSent    InviteReferral[]   @relation("InviteReferralsSent")
+  pointTransactions      PointTransaction[]
+  readingRecords         ReadingRecord[]
+  sessions               Session[]
+  tarotSessions          TarotSession[]
+  topUpOrders            TopUpOrder[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TarotSession {
+  id                String         @id @default(cuid())
+  ownerId           String
+  currentStep       String
+  question          String
+  category          String
+  saveToHistory     Boolean        @default(true)
+  spreadCardsJson   String
+  selectedCardsJson String         @default("[]")
+  revealed          Int            @default(0)
+  ritualStartedAt   DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  owner             User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  readingRecord     ReadingRecord?
+
+  @@index([ownerId, updatedAt])
+}
+
+model ReadingRecord {
+  id                  String            @id @default(cuid())
+  sessionId           String            @unique
+  userId              String
+  question            String
+  category            String
+  cardsSnapshot       String
+  fullReading         String?
+  source              String
+  model               String
+  status              String
+  errorMessage        String?
+  costPoints          Int               @default(0)
+  chargeRequestKey    String?           @unique
+  chargeTransactionId String?           @unique
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  chargeTransaction   PointTransaction? @relation("ReadingCharge", fields: [chargeTransactionId], references: [id], onDelete: SetNull)
+  followupRecords     FollowupRecord[]
+  session             TarotSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+model PointTransaction {
+  id             String          @id @default(cuid())
+  userId         String
+  amount         Int
+  balanceAfter   Int
+  kind           String
+  source         String
+  requestKey     String          @unique
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  dailyCheckIn   DailyCheckIn?   @relation("DailyCheckInCharge")
+  followupCharge FollowupRecord? @relation("FollowupCharge")
+  inviteReward   InviteReferral? @relation("InviteReward")
+  readingCharge  ReadingRecord?  @relation("ReadingCharge")
+  topUpOrder     TopUpOrder?     @relation("TopUpSettlement")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([source, createdAt])
+}
+
+model DailyCheckIn {
+  id                  String           @id @default(cuid())
+  userId              String
+  dayKey              String
+  rewardPoints        Int              @default(0)
+  chargeTransactionId String           @unique
+  claimedAt           DateTime         @default(now())
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  chargeTransaction   PointTransaction @relation("DailyCheckInCharge", fields: [chargeTransactionId], references: [id], onDelete: Cascade)
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([userId, claimedAt])
+}
+
+model InviteProfile {
+  id        String           @id @default(cuid())
+  userId     String           @unique
+  code       String           @unique
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  referrals  InviteReferral[]
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InviteReferral {
+  id                  String            @id @default(cuid())
+  inviteProfileId     String
+  inviterId           String
+  inviteeId           String?           @unique
+  inviteeName         String?
+  status              String
+  rewardPoints        Int               @default(0)
+  rewardTransactionId String?           @unique
+  claimedAt           DateTime?
+  rewardedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  inviteProfile       InviteProfile     @relation(fields: [inviteProfileId], references: [id], onDelete: Cascade)
+  inviter             User              @relation("InviteReferralsSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee             User?             @relation("InviteReferralReceived", fields: [inviteeId], references: [id], onDelete: SetNull)
+  rewardTransaction   PointTransaction? @relation("InviteReward", fields: [rewardTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([inviterId, updatedAt])
+  @@index([inviteProfileId, createdAt])
+  @@index([status, updatedAt])
+}
+
+model FollowupRecord {
+  id                  String            @id @default(cuid())
+  readingRecordId     String
+  userId              String
+  prompt              String
+  answer              String?
+  status              String
+  source              String
+  model               String
+  requestKey          String            @unique
+  chargeTransactionId String?           @unique
+  costPoints          Int               @default(0)
+  errorMessage        String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  chargeTransaction   PointTransaction? @relation("FollowupCharge", fields: [chargeTransactionId], references: [id], onDelete: SetNull)
+  readingRecord       ReadingRecord     @relation(fields: [readingRecordId], references: [id], onDelete: Cascade)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([readingRecordId, createdAt])
+  @@index([userId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+model TopUpOrder {
+  id                String            @id @default(cuid())
+  userId            String
+  packageId         String
+  packageLabel      String
+  packageCaption    String?
+  points            Int
+  amountMinor       Int
+  currency          String
+  provider          String
+  status            String
+  requestKey        String            @unique
+  intent            String?
+  returnTo          String
+  checkoutSessionId String?           @unique
+  checkoutUrl       String?
+  providerPaymentId String?           @unique
+  pointTransactionId String?          @unique
+  errorMessage      String?
+  paidAt            DateTime?
+  canceledAt        DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  pointTransaction  PointTransaction? @relation("TopUpSettlement", fields: [pointTransactionId], references: [id], onDelete: SetNull)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, updatedAt])
+}

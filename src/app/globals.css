@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+:root {
+  --font-geist-sans: "Aptos", "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
+  --font-geist-mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --background: #07090f;
+  --foreground: #f3ecdf;
+  --surface: #0d111b;
+  --surface-elevated: #121726;
+  --surface-strong: #171d2d;
+  --card: rgba(17, 21, 33, 0.78);
+  --card-strong: rgba(22, 27, 41, 0.96);
+  --card-foreground: #f3ecdf;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(234, 208, 171, 0.18);
+  --muted: #9d99a9;
+  --muted-strong: #c6c0cf;
+  --brand: #b9905d;
+  --brand-strong: #e5c08e;
+  --brand-soft: rgba(185, 144, 93, 0.16);
+  --shadow-soft: 0 30px 80px rgba(0, 0, 0, 0.34);
+  --shadow-device: 0 44px 120px rgba(0, 0, 0, 0.58);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-strong: var(--surface-strong);
+  --color-card: var(--card);
+  --color-card-strong: var(--card-strong);
+  --color-card-foreground: var(--card-foreground);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at top, rgba(21, 31, 54, 0.85), transparent 30%),
+    radial-gradient(circle at 18% 18%, rgba(185, 144, 93, 0.12), transparent 22%),
+    linear-gradient(180deg, #090b12 0%, #06070d 100%);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "PingFang TC", "Noto Sans TC", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+@supports (min-height: 100dvh) {
+  body {
+    min-height: 100dvh;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(185, 144, 93, 0.24);
+}
+
+.font-display {
+  font-family:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+
+.app-shell-scroll {
+  scrollbar-width: none;
+}
+
+.app-shell-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes altar-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes slow-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes section-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-delay: 0ms !important;
+    transition-duration: 140ms !important;
+    transition-timing-function: ease-out !important;
+    scroll-behavior: auto !important;
+  }
+}
