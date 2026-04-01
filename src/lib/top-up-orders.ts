@@ -7,8 +7,7 @@ import {
   type MaybePointsIntent,
   type PointPackage,
 } from "@/lib/points";
-import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, type TransactionClient } from "@/lib/prisma";
 import {
   getStripeServer,
   isStripeConfigured,
@@ -166,7 +165,7 @@ async function settleTopUpOrderById(args: {
   orderId: string;
   providerPaymentId?: string | null;
 }) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const order = await tx.topUpOrder.findUnique({
       where: { id: args.orderId },
     });

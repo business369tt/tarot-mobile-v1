@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
 import { randomBytes } from "node:crypto";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { inviteRewardPoints, buildInviteLink } from "@/lib/invite";
-import { prisma } from "@/lib/prisma";
+import { prisma, type TransactionClient } from "@/lib/prisma";
 
 const inviteDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -69,7 +69,7 @@ async function createInviteProfile(userId: string) {
       });
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error instanceof PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
         const existingProfile = await prisma.inviteProfile.findUnique({
@@ -182,7 +182,7 @@ export async function claimInviteForViewer(args: {
   }
 
   try {
-    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return await prisma.$transaction(async (tx: TransactionClient) => {
       const profile = await tx.inviteProfile.findUnique({
         where: {
           code: normalizedCode,

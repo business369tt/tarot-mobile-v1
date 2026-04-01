@@ -1,6 +1,10 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
+export type TransactionClient = Parameters<
+  Parameters<PrismaClient["$transaction"]>[0]
+>[0];
+
 const globalForPrisma = globalThis as unknown as {
   prismaAdapter?: PrismaBetterSqlite3;
   prisma?: PrismaClient;

@@ -1,7 +1,6 @@
-import { Prisma } from "@prisma/client";
 import type { DailyCheckInState } from "@/lib/daily-checkin";
 import { getDailyCheckInState } from "@/lib/daily-checkin";
-import { prisma } from "@/lib/prisma";
+import { prisma, type TransactionClient } from "@/lib/prisma";
 import {
   dailyCheckInPoints,
   followupCostPoints,
@@ -18,40 +17,53 @@ const pointsDateFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
-type PointTransactionRecord = Prisma.PointTransactionGetPayload<{
-  include: {
-    topUpOrder: {
-      select: {
-        id: true;
-      };
-    };
-    followupCharge: {
-      select: {
-        id: true;
-        prompt: true;
-        readingRecordId: true;
-      };
-    };
-    dailyCheckIn: {
-      select: {
-        id: true;
-        dayKey: true;
-      };
-    };
-    inviteReward: {
-      select: {
-        id: true;
-        inviteeName: true;
-      };
-    };
-    readingCharge: {
-      select: {
-        id: true;
-        question: true;
-      };
-    };
-  };
-}>;
+async function getPointsLedgerTransactions(userId: string) {
+  return prisma.pointTransaction.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      topUpOrder: {
+        select: {
+          id: true,
+        },
+      },
+      followupCharge: {
+        select: {
+          id: true,
+          prompt: true,
+          readingRecordId: true,
+        },
+      },
+      dailyCheckIn: {
+        select: {
+          id: true,
+          dayKey: true,
+        },
+      },
+      inviteReward: {
+        select: {
+          id: true,
+          inviteeName: true,
+        },
+      },
+      readingCharge: {
+        select: {
+          id: true,
+          question: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 24,
+  });
+}
+
+type PointTransactionRecord = Awaited<
+  ReturnType<typeof getPointsLedgerTransactions>
+>[number];
 
 export type PointsLedgerEntry = {
   id: string;
@@ -275,47 +287,7 @@ export async function getViewerPointsLedger(
       where: { id: userId },
       select: { points: true },
     }),
-    prisma.pointTransaction.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        topUpOrder: {
-          select: {
-            id: true,
-          },
-        },
-        followupCharge: {
-          select: {
-            id: true,
-            prompt: true,
-            readingRecordId: true,
-          },
-        },
-        dailyCheckIn: {
-          select: {
-            id: true,
-            dayKey: true,
-          },
-        },
-        inviteReward: {
-          select: {
-            id: true,
-            inviteeName: true,
-          },
-        },
-        readingCharge: {
-          select: {
-            id: true,
-            question: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 24,
-    }),
+    getPointsLedgerTransactions(userId),
     getDailyCheckInState(userId),
   ]);
 
@@ -366,7 +338,7 @@ export async function createPointsTopUp(args: {
   requestKey: string;
   description: string;
 }) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const existingTransaction = await tx.pointTransaction.findUnique({
       where: {
         requestKey: args.requestKey,
@@ -432,7 +404,7 @@ export async function ensureReadingCharge(args: {
   const cost = args.costPoints ?? readingCostPoints;
   const requestKey = buildReadingChargeRequestKey(args.sessionId);
 
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const readingRecord = await tx.readingRecord.findUnique({
       where: { id: args.readingRecordId },
       select: {
@@ -555,7 +527,7 @@ export async function ensureFollowupCharge(args: {
   const cost = args.costPoints ?? followupCostPoints;
   const chargeRequestKey = buildFollowupChargeRequestKey(args.requestKey);
 
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const followupRecord = await tx.followupRecord.findUnique({
       where: { id: args.followupRecordId },
       select: {

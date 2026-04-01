@@ -1,6 +1,5 @@
-import type { Prisma } from "@prisma/client";
 import { dailyCheckInPoints } from "@/lib/points";
-import { prisma } from "@/lib/prisma";
+import { prisma, type TransactionClient } from "@/lib/prisma";
 
 const dailyCheckInTimeZone = process.env.APP_TIMEZONE || "Asia/Taipei";
 
@@ -84,7 +83,7 @@ export async function claimDailyCheckIn(userId: string) {
   const dayKey = getDailyCheckInDayKey();
   const requestKey = buildDailyCheckInRequestKey(userId, dayKey);
 
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const existingCheckIn = await tx.dailyCheckIn.findUnique({
       where: {
         userId_dayKey: {

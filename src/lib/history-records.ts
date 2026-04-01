@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mapRecordToFollowupRecord } from "@/lib/followup-record";
 import { getCategoryMeta } from "@/lib/mock-tarot-data";
@@ -21,22 +20,70 @@ const historyDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
-type HistoryListQueryRecord = Prisma.ReadingRecordGetPayload<{
-  include: {
-    followupRecords: {
-      select: {
-        id: true;
-        costPoints: true;
-      };
-    };
-  };
-}>;
+async function getHistoryListQueryRecords(viewerId: string) {
+  return prisma.readingRecord.findMany({
+    where: {
+      userId: viewerId,
+      status: "ready",
+      session: {
+        is: {
+          ownerId: viewerId,
+          saveToHistory: true,
+        },
+      },
+    },
+    include: {
+      followupRecords: {
+        where: {
+          userId: viewerId,
+          status: "ready",
+        },
+        select: {
+          id: true,
+          costPoints: true,
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+}
 
-type HistoryDetailQueryRecord = Prisma.ReadingRecordGetPayload<{
-  include: {
-    followupRecords: true;
-  };
-}> | null;
+async function getHistoryDetailQueryRecord(viewerId: string, recordId: string) {
+  return prisma.readingRecord.findFirst({
+    where: {
+      id: recordId,
+      userId: viewerId,
+      status: "ready",
+      session: {
+        is: {
+          ownerId: viewerId,
+          saveToHistory: true,
+        },
+      },
+    },
+    include: {
+      followupRecords: {
+        where: {
+          userId: viewerId,
+          status: "ready",
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+  });
+}
+
+type HistoryListQueryRecord = Awaited<
+  ReturnType<typeof getHistoryListQueryRecords>
+>[number];
+
+type HistoryDetailQueryRecord = Awaited<
+  ReturnType<typeof getHistoryDetailQueryRecord>
+>;
 
 export type HistoryListItem = {
   id: string;
@@ -137,33 +184,7 @@ function mapDetailRecord(record: NonNullable<HistoryDetailQueryRecord>): History
 }
 
 export async function getViewerHistoryList(viewerId: string) {
-  const records = await prisma.readingRecord.findMany({
-    where: {
-      userId: viewerId,
-      status: "ready",
-      session: {
-        is: {
-          ownerId: viewerId,
-          saveToHistory: true,
-        },
-      },
-    },
-    include: {
-      followupRecords: {
-        where: {
-          userId: viewerId,
-          status: "ready",
-        },
-        select: {
-          id: true,
-          costPoints: true,
-        },
-      },
-    },
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+  const records = await getHistoryListQueryRecords(viewerId);
 
   return records.map(mapListItem);
 }
@@ -172,30 +193,7 @@ export async function getViewerHistoryDetail(
   viewerId: string,
   recordId: string,
 ) {
-  const record = await prisma.readingRecord.findFirst({
-    where: {
-      id: recordId,
-      userId: viewerId,
-      status: "ready",
-      session: {
-        is: {
-          ownerId: viewerId,
-          saveToHistory: true,
-        },
-      },
-    },
-    include: {
-      followupRecords: {
-        where: {
-          userId: viewerId,
-          status: "ready",
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-    },
-  });
+  const record = await getHistoryDetailQueryRecord(viewerId, recordId);
 
   return record ? mapDetailRecord(record) : null;
 }
