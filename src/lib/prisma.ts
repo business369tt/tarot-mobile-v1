@@ -1,6 +1,6 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import type { PrismaClient as GeneratedPrismaClient } from "@prisma/client/index";
 import type { ITXClientDenyList } from "@prisma/client/runtime/client";
-import type { PrismaClient as GeneratedPrismaClient } from "../../node_modules/.prisma/client/index";
 
 type PrismaClientConstructor = new (options?: {
   adapter?: PrismaBetterSqlite3;
