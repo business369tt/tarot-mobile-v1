@@ -85,6 +85,9 @@ type HistoryDetailQueryRecord = Awaited<
   ReturnType<typeof getHistoryDetailQueryRecord>
 >;
 
+type HistoryListFollowupRecord = HistoryListQueryRecord["followupRecords"][number];
+type HistoryDetailFollowupRecord = ReturnType<typeof mapRecordToFollowupRecord>;
+
 export type HistoryListItem = {
   id: string;
   question: string;
@@ -133,7 +136,8 @@ function mapListItem(record: HistoryListQueryRecord): HistoryListItem {
   const categoryMeta = getCategoryMeta(reading.category);
   const followupCount = record.followupRecords.length;
   const followupSpentPoints = record.followupRecords.reduce(
-    (sum, followup) => sum + followup.costPoints,
+    (sum: number, followup: HistoryListFollowupRecord) =>
+      sum + followup.costPoints,
     0,
   );
 
@@ -164,7 +168,8 @@ function mapDetailRecord(record: NonNullable<HistoryDetailQueryRecord>): History
   const followups = record.followupRecords.map(mapRecordToFollowupRecord);
   const categoryMeta = getCategoryMeta(reading.category);
   const followupSpentPoints = followups.reduce(
-    (sum, followup) => sum + followup.costPoints,
+    (sum: number, followup: HistoryDetailFollowupRecord) =>
+      sum + followup.costPoints,
     0,
   );
 
