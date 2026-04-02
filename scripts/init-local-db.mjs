@@ -25,7 +25,11 @@ const idempotentSql = sql
   .replaceAll("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ");
 const statements = idempotentSql
   .split(/;\s*\n/g)
-  .map((statement) => statement.trim())
+  .map((statement) =>
+    statement
+      .replace(/^--.*$/gm, "")
+      .trim(),
+  )
   .filter(Boolean)
   .map((statement) => `${statement};`);
 const tableStatements = statements.filter((statement) =>
