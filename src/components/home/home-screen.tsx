@@ -6,109 +6,74 @@ import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
 
 export function HomeScreen() {
-  const { isAuthenticated, displayName } = useAuth();
-  const { session, ownsCurrentSession, getResumeRoute, startNewReading } =
-    useTarotFlow();
+  const { isAuthenticated } = useAuth();
+  const { session, ownsCurrentSession, getResumeRoute } = useTarotFlow();
   const { t } = useLocale();
   const hasCurrentReading = Boolean(session && ownsCurrentSession);
-  const primaryHref = isAuthenticated ? "/question" : "/auth/line";
-  const secondaryHref = isAuthenticated ? "/history" : "/auth/line";
+  const primaryHref = hasCurrentReading
+    ? getResumeRoute()
+    : isAuthenticated
+      ? "/question"
+      : "/auth/line";
+  const primaryLabel = hasCurrentReading
+    ? t("繼續上次解讀", "Continue")
+    : t("開始抽牌", "Start");
+  const trustCopy = isAuthenticated
+    ? t("登入後的解讀會自動保存到你的紀錄。", "Your readings are saved to history.")
+    : t(
+        "使用 LINE 登入後即可開始，解讀也會自動保存。",
+        "Sign in with LINE to start and save your readings.",
+      );
+  const historyCopy = hasCurrentReading
+    ? t("先看保存的解讀，再決定下一步。", "Review your saved readings first.")
+    : t("回到你保存過的解讀。", "See your saved readings.");
 
   return (
-    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
-      <div className="space-y-8 pt-6">
-        <div className="space-y-3">
-          <p className="text-sm text-foreground/56">
-            {isAuthenticated
-              ? displayName ?? t("已登入", "Signed in")
-              : t("手機版", "Mobile")}
-          </p>
-          <h1 className="max-w-[13rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+    <section className="relative flex flex-1 flex-col overflow-hidden py-6">
+      <div className="pointer-events-none absolute inset-x-[-12%] top-14 h-[18rem] rounded-full bg-[radial-gradient(circle,rgba(185,144,93,0.18),rgba(185,144,93,0.03)_54%,transparent_76%)] blur-3xl" />
+      <div className="pointer-events-none absolute right-[-3.5rem] top-28 h-28 w-28 rounded-full border border-white/6" />
+
+      <div className="relative flex flex-1 flex-col justify-center gap-12 pb-8 pt-10">
+        <div className="space-y-6">
+          <h1 className="font-display max-w-[12rem] text-[3.45rem] leading-[0.94] tracking-[-0.04em] text-card-foreground">
             {t("開始你的塔羅解讀", "Start your tarot reading")}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[17rem] text-base leading-7 text-foreground/64">
             {t(
-              "輸入問題、抽牌，立即查看 AI 解讀。",
-              "Ask a question, draw cards, and view your AI reading right away.",
+              "輸入問題，抽三張牌，立即查看解讀。",
+              "Ask a question, draw three cards, and get your reading right away.",
             )}
           </p>
         </div>
 
-        <div className="grid gap-3">
+        <div className="max-w-sm space-y-4">
           <Link
             href={primaryHref}
-            className="min-h-[3.9rem] rounded-[1.6rem] bg-white px-5 py-4 text-center text-base font-semibold text-black transition hover:opacity-92"
+            className="flex min-h-[4rem] items-center justify-center rounded-[1.7rem] bg-white px-5 py-4 text-base font-semibold text-black shadow-[0_24px_60px_rgba(0,0,0,0.28)] transition hover:opacity-92"
           >
-            {isAuthenticated
-              ? t("開始抽牌", "Start")
-              : t("登入開始", "Sign in")}
+            {primaryLabel}
           </Link>
-
-          <Link
-            href={secondaryHref}
-            className="min-h-[3.9rem] rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-          >
-            {isAuthenticated
-              ? t("查看紀錄", "View history")
-              : t("登入保存紀錄", "Save with LINE")}
-          </Link>
+          <p className="max-w-[17rem] text-sm leading-6 text-foreground/48">
+            {trustCopy}
+          </p>
         </div>
 
-        <p className="text-sm leading-6 text-foreground/50">
-          {isAuthenticated
-            ? t(
-                "你的解讀會綁定同一個身份，之後可以回來續接。",
-                "Your readings stay under one profile so you can return later.",
-              )
-            : t(
-                "目前需要先用 LINE 登入，紀錄與點數才會保存。",
-                "LINE sign-in is required before readings, history, and points can be kept.",
-              )}
-        </p>
-      </div>
-
-      <div className="rounded-[2rem] bg-white/[0.04] px-5 py-6">
-        {hasCurrentReading ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm text-foreground/56">
-                {t("你有一段進行中的解讀", "You have an active reading")}
+        {isAuthenticated ? (
+          <Link
+            href="/history"
+            className="group max-w-sm rounded-[1.6rem] border border-white/8 bg-white/[0.03] px-5 py-4 transition hover:border-white/14 hover:bg-white/[0.05]"
+          >
+            <p className="text-sm text-foreground/46">{t("我的紀錄", "History")}</p>
+            <div className="mt-2 flex items-center justify-between gap-4">
+              <p className="text-base font-medium leading-7 text-card-foreground">
+                {historyCopy}
               </p>
-              <p className="text-xl font-semibold leading-8 text-card-foreground">
-                {session?.question ||
-                  t("回到上次進度", "Return to your current reading")}
-              </p>
+              <span className="text-sm text-foreground/40 transition group-hover:text-foreground/62">
+                {t("查看", "Open")}
+              </span>
             </div>
-
-            <div className="grid gap-3">
-              <Link
-                href={getResumeRoute()}
-                className="min-h-[3.5rem] rounded-[1.35rem] bg-brand px-4 py-4 text-center text-sm font-semibold text-black transition hover:bg-brand-strong"
-              >
-                {t("繼續", "Continue")}
-              </Link>
-              <button
-                type="button"
-                onClick={startNewReading}
-                className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.05]"
-              >
-                {t("重新開始", "Start over")}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-sm text-foreground/56">
-              {t("最短路徑", "Shortest path")}
-            </p>
-            <p className="max-w-[15rem] text-lg font-semibold leading-8 text-card-foreground">
-              {t(
-                "只要提出問題，就能開始。",
-                "Just ask your question and begin.",
-              )}
-            </p>
-          </div>
-        )}
+          </Link>
+        ) : null}
       </div>
     </section>
   );

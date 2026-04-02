@@ -45,16 +45,39 @@ export function MobileShell({
   const { session, ownsCurrentSession, getResumeRoute } = useTarotFlow();
   const flowHref =
     session && ownsCurrentSession ? getResumeRoute() : "/question";
+  const isHome = pathname === "/";
+  const brandLabel = isHome ? t("塔羅 AI", "Tarot AI") : t("塔羅", "Tarot");
 
   return (
-    <div className="min-h-[100svh] bg-[radial-gradient(circle_at_top,rgba(72,90,138,0.15),transparent_24%),linear-gradient(180deg,#0b0d12,#06070a)] text-foreground">
+    <div
+      className={`min-h-[100svh] text-foreground ${
+        isHome
+          ? "bg-[radial-gradient(circle_at_top,rgba(244,236,223,0.06),transparent_32%),radial-gradient(circle_at_50%_18%,rgba(185,144,93,0.14),transparent_26%),linear-gradient(180deg,#090a0f,#05060a)]"
+          : "bg-[radial-gradient(circle_at_top,rgba(72,90,138,0.15),transparent_24%),linear-gradient(180deg,#0b0d12,#06070a)]"
+      }`}
+    >
       <div className="mx-auto flex min-h-[100svh] max-w-[430px] flex-col px-4 pb-4 pt-[calc(env(safe-area-inset-top)+12px)] sm:px-5">
-        <header className="flex items-center justify-between py-3">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-card-foreground">
-            {t("塔羅", "Tarot")}
+        <header
+          className={`flex items-center justify-between ${
+            isHome ? "pb-2 pt-4" : "py-3"
+          }`}
+        >
+          <Link
+            href="/"
+            className={`font-semibold tracking-tight text-card-foreground ${
+              isHome ? "text-xl tracking-[-0.03em]" : "text-lg"
+            }`}
+          >
+            {brandLabel}
           </Link>
 
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+          <div
+            className={`flex items-center gap-1 rounded-full p-1 ${
+              isHome
+                ? "bg-white/[0.03]"
+                : "border border-white/10 bg-white/[0.04]"
+            }`}
+          >
             <button
               type="button"
               onClick={() => setLocale("zh-TW")}
@@ -80,7 +103,9 @@ export function MobileShell({
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col pb-6">{children}</main>
+        <main className={`flex flex-1 flex-col ${isHome ? "pb-8" : "pb-6"}`}>
+          {children}
+        </main>
 
         <footer className="mt-auto pb-[calc(env(safe-area-inset-bottom)+6px)]">
           <nav className="grid grid-cols-3 gap-2 rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-2 backdrop-blur">
