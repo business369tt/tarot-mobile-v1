@@ -15,16 +15,16 @@ export default async function HistoryDetailPage({
   if (!viewerId) {
     return (
       <HistoryStateCard
-        eyebrow="紀錄入口"
-        eyebrowEn="Archive access"
-        title="先連結身份，才能打開這份紀錄。"
-        titleEn="Link a profile before opening this record."
-        body="已儲存的報告只能從最初持有它的 LINE 身份重新開啟。"
-        bodyEn="A saved report can only be reopened from the LINE profile that originally held it."
+        eyebrow="查看紀錄"
+        eyebrowEn="History"
+        title="先登入再打開這筆紀錄"
+        titleEn="Sign in to open this record"
+        body="這筆內容只會跟著原本的 LINE 身份。"
+        bodyEn="This record stays with the LINE profile that opened it."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 繼續（Continue with LINE）"
+        primaryLabel="使用 LINE 登入"
         secondaryHref="/history"
-        secondaryLabel="回到紀錄（Back to archive）"
+        secondaryLabel="回到紀錄"
       />
     );
   }
@@ -34,16 +34,16 @@ export default async function HistoryDetailPage({
   if (!record) {
     return (
       <HistoryStateCard
-        eyebrow="紀錄不可用"
-        eyebrowEn="Archive unavailable"
-        title="目前身份無法開啟這份紀錄。"
-        titleEn="This record is not available from the current profile."
-        body="它可能屬於另一個 LINE 身份，或一開始就沒有被保存進紀錄中。"
-        bodyEn="It may belong to another LINE identity, or it may never have been saved into the archive in the first place."
+        eyebrow="找不到紀錄"
+        eyebrowEn="Record unavailable"
+        title="這筆紀錄目前無法打開"
+        titleEn="This record is unavailable"
+        body="它可能不屬於你目前的身份，或尚未保存。"
+        bodyEn="It may belong to another profile, or it may not have been saved."
         primaryHref="/history"
-        primaryLabel="回到紀錄（Back to archive）"
+        primaryLabel="回到紀錄"
         secondaryHref="/question"
-        secondaryLabel="開始新的提問（Begin a new question）"
+        secondaryLabel="開始新的解讀"
       />
     );
   }

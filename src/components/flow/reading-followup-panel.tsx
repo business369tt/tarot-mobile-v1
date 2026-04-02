@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
+import { useLocale } from "@/components/i18n/locale-provider";
 import {
   defaultFollowupStatus,
   followupFailureMessage,
@@ -73,18 +74,22 @@ function createFollowupRequestKey() {
   return `followup:${Date.now().toString(36)}`;
 }
 
-function getStatusLabel(status: FollowupRecordStatus) {
-  if (status === "ready") return "已回答 / Answered";
-  if (status === "needs_points") return "待補點 / Points";
-  if (status === "failed") return "可重試 / Retry";
-  if (status === "generating") return "續寫中 / Continuing";
-  return "待命 / Idle";
+function getStatusLabel(
+  status: FollowupRecordStatus,
+  t: (zh: string, en: string) => string,
+) {
+  if (status === "ready") return t("已完成", "Ready");
+  if (status === "needs_points") return t("需要點數", "Needs points");
+  if (status === "failed") return t("重試", "Retry");
+  if (status === "generating") return t("生成中", "Generating");
+  return t("待命", "Idle");
 }
 
 export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { inlineText, t } = useLocale();
   const { session } = useTarotFlow();
   const sessionId = session?.sessionId ?? null;
   const resumeIntent = searchParams.get("resume");
@@ -101,7 +106,14 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
   const state =
     viewState.sessionId === sessionId
       ? viewState
-      : { sessionId, status: defaultFollowupStatus, currentRecord: null, records: [], errorMessage: null, pointsState: null };
+      : {
+          sessionId,
+          status: defaultFollowupStatus,
+          currentRecord: null,
+          records: [],
+          errorMessage: null,
+          pointsState: null,
+        };
   const { status, currentRecord, records, errorMessage, pointsState } = state;
   const isLocked = status === "generating" || status === "needs_points";
 
@@ -113,16 +125,81 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
     const currentFollowup = response.data.currentFollowup;
     const followups = response.data.followups ?? [];
 
-    if (currentFollowup?.status === "ready") return setViewState({ sessionId, status: "ready", currentRecord: currentFollowup, records: followups, errorMessage: null, pointsState: null });
-    if (currentFollowup?.status === "generating") return setViewState({ sessionId, status: "generating", currentRecord: currentFollowup, records: followups, errorMessage: null, pointsState: null });
-    if (currentFollowup?.status === "needs_points") return setViewState({ sessionId, status: "needs_points", currentRecord: currentFollowup, records: followups, errorMessage: response.data.message || currentFollowup.errorMessage || null, pointsState: response.data.points ?? null });
-    if (currentFollowup?.status === "failed") return setViewState({ sessionId, status: "failed", currentRecord: currentFollowup, records: followups, errorMessage: currentFollowup.errorMessage || response.data.message || followupFailureMessage, pointsState: null });
-    setViewState({ sessionId, status: "idle", currentRecord: null, records: followups, errorMessage: response.data.message || null, pointsState: null });
+    if (currentFollowup?.status === "ready") {
+      return setViewState({
+        sessionId,
+        status: "ready",
+        currentRecord: currentFollowup,
+        records: followups,
+        errorMessage: null,
+        pointsState: null,
+      });
+    }
+
+    if (currentFollowup?.status === "generating") {
+      return setViewState({
+        sessionId,
+        status: "generating",
+        currentRecord: currentFollowup,
+        records: followups,
+        errorMessage: null,
+        pointsState: null,
+      });
+    }
+
+    if (currentFollowup?.status === "needs_points") {
+      return setViewState({
+        sessionId,
+        status: "needs_points",
+        currentRecord: currentFollowup,
+        records: followups,
+        errorMessage:
+          response.data.message || currentFollowup.errorMessage || null,
+        pointsState: response.data.points ?? null,
+      });
+    }
+
+    if (currentFollowup?.status === "failed") {
+      return setViewState({
+        sessionId,
+        status: "failed",
+        currentRecord: currentFollowup,
+        records: followups,
+        errorMessage:
+          currentFollowup.errorMessage ||
+          response.data.message ||
+          followupFailureMessage,
+        pointsState: null,
+      });
+    }
+
+    setViewState({
+      sessionId,
+      status: "idle",
+      currentRecord: null,
+      records: followups,
+      errorMessage: response.data.message || null,
+      pointsState: null,
+    });
   }
 
-  async function runFollowup(body?: Partial<{ followupId: string; force: boolean; prompt: string; requestKey: string }>) {
+  async function runFollowup(
+    body?: Partial<{
+      followupId: string;
+      force: boolean;
+      prompt: string;
+      requestKey: string;
+    }>,
+  ) {
     if (!sessionId || !canOpen) return;
-    setViewState((previous) => ({ sessionId, status: "generating", currentRecord: previous.currentRecord, records: previous.records, errorMessage: null, pointsState: null }));
+    setViewState((previous) => ({
+      sessionId,
+      status: "generating",
+      currentRecord: previous.currentRecord,
+      records: previous.records,
+      errorMessage: null,
+      pointsState: null,
+    }));
     const response = await requestCurrentFollowup("POST", body);
     applyResponse(response);
   }
@@ -144,7 +221,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
     return () => {
       active = false;
     };
-  }, [canOpen, sessionId]);
+  }, [applyFollowupResponse, canOpen, sessionId]);
 
   useEffect(() => {
     if (!sessionId || status !== "generating") return;
@@ -162,7 +239,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [sessionId, status]);
+  }, [applyFollowupResponse, sessionId, status]);
 
   useEffect(() => {
     if (
@@ -178,7 +255,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
       router.replace(pathname);
     });
     void continueFollowup({ followupId: currentRecord.id, force: true });
-  }, [currentRecord, pathname, resumeIntent, router]);
+  }, [continueFollowup, currentRecord, pathname, resumeIntent, router]);
 
   function handleSubmit() {
     const prompt = draft.trim();
@@ -192,77 +269,77 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
     void runFollowup({ followupId: currentRecord.id, force: true });
   }
 
-  const topUpHref = pointsState?.topUpHref ?? "/points?intent=followup&returnTo=%2Freading";
+  const topUpHref =
+    pointsState?.topUpHref ?? "/points?intent=followup&returnTo=%2Freading";
 
   return (
-    <div className="grid gap-4 motion-safe:[animation:section-rise_1000ms_cubic-bezier(.22,1,.36,1)]">
-      <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.04] p-5 sm:rounded-[1.95rem] sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">續接脈絡 / Continue the thread</p>
-            <h3 className="mt-3 font-display text-[1.85rem] leading-[0.98] text-card-foreground">從這裡再問一個<br />更安靜的問題。</h3>
-          </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-foreground/56">{getStatusLabel(status)}</span>
-        </div>
-
-        <p className="mt-4 max-w-[18rem] text-sm leading-7 text-muted">
-          {!canOpen
-            ? "主報告完成後，追問才會開啟，讓下一個問題繼續緊貼在同一副牌陣上。"
-            : status === "needs_points"
-              ? "這個下一題已經被保留住了。先在這裡補點，再回來讓脈絡繼續往下走。"
-              : status === "generating"
-                ? "下一段回答正根據已完成的報告、已翻開牌陣與你剛剛補上的問題，一起被整理出來。"
+    <div className="grid gap-4">
+      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
+        <div className="space-y-3">
+          <p className="text-sm text-foreground/56">
+            {t("想繼續問？", "Want to continue?")}
+          </p>
+          <h3 className="text-[1.9rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+            {t("在同一份解讀裡追問", "Ask a follow-up")}
+          </h3>
+          <p className="max-w-[18rem] text-sm leading-7 text-foreground/62">
+            {!canOpen
+              ? t("主解讀完成後，這裡才會打開。", "This opens once the main reading is ready.")
+              : status === "needs_points"
+                ? inlineText(errorMessage || followupNeedsPointsMessage)
                 : status === "failed"
-                  ? errorMessage || followupFailureMessage
-                  : "在同一份解讀裡再問一個更穩、更準的問題，而不是從零重新開一段。"}
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.22em] text-foreground/52">
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">追問消耗 {followupCostPoints} 點 / Follow-up costs {followupCostPoints}</span>
-          {currentRecord?.model ? <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{currentRecord.model}</span> : null}
-          {records.length > 0 ? <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2">{`${records.length} 條脈絡 / ${records.length} thread${records.length > 1 ? "s" : ""}`}</span> : null}
+                  ? inlineText(errorMessage || followupFailureMessage)
+                  : t(
+                      `每次追問會消耗 ${followupCostPoints} 點。`,
+                      `Each follow-up costs ${followupCostPoints} points.`,
+                    )}
+          </p>
         </div>
 
-        <div className="mt-6 rounded-[1.45rem] border border-white/10 bg-black/18 p-4 sm:rounded-[1.55rem] sm:p-5">
-          <label htmlFor="followup-prompt" className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-strong">追問內容 / Follow-up prompt</label>
+        <div className="mt-5 rounded-[1.4rem] border border-white/10 bg-black/18 p-4">
           <textarea
-            id="followup-prompt"
             value={draft}
             onChange={(event) => {
               setDraft(event.target.value);
             }}
             disabled={!canOpen || isLocked}
-            placeholder={!canOpen ? "先等主解讀完成，下一個問題才會從這裡打開。" : isLocked ? "這條脈絡已經在往前續寫中。" : "例如：如果我走向那個比較安靜的選擇，最先改變的是什麼？"}
+            placeholder={t(
+              "例如：這段關係接下來我該注意什麼？",
+              "For example: What should I pay attention to next in this relationship?",
+            )}
             rows={4}
-            className="mt-4 min-h-[7.5rem] w-full resize-none rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-7 text-card-foreground outline-none transition placeholder:text-foreground/30 focus:border-[rgba(229,192,142,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-[7rem] w-full resize-none bg-transparent text-sm leading-7 text-card-foreground outline-none placeholder:text-foreground/30 disabled:cursor-not-allowed disabled:opacity-70"
           />
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <p className="text-xs leading-6 text-foreground/50">問題要聚焦到還留在同一份解讀裡。 / Keep it focused enough to stay inside this same reading.</p>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/42">{draft.trim().length}/320</p>
-          </div>
         </div>
 
-        <div className="mt-6 grid gap-3">
+        <div className="mt-5 grid gap-3">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!canOpen || isLocked || !draft.trim()}
-            className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none sm:rounded-[1.4rem]"
+            className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {status === "generating"
-              ? "正在續寫答案（Continuing this answer）"
+              ? t("生成中", "Generating")
               : status === "needs_points"
-                ? "等待補點（Waiting for points）"
-                : "送出追問（Ask a follow-up）"}
+                ? t("等待補點", "Needs points")
+                : t("送出追問", "Ask follow-up")}
           </button>
 
           {status === "needs_points" ? (
-            <Link href={topUpHref} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-center text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">
-              為這次追問補點（Add points for this follow-up）
+            <Link
+              href={topUpHref}
+              className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+            >
+              {t("先去補點", "Add points")}
             </Link>
           ) : status === "failed" && currentRecord ? (
-            <button type="button" onClick={handleRetry} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">
-              再試一次追問（Try this follow-up again）
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+            >
+              {t("重新送出", "Try again")}
             </button>
           ) : null}
         </div>
@@ -274,47 +351,67 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
             const isCurrent = currentRecord?.id === followup.id;
 
             return (
-              <article key={followup.id} className="rounded-[1.65rem] border border-white/10 bg-white/[0.04] p-5 sm:rounded-[1.75rem] sm:p-6">
+              <article
+                key={followup.id}
+                className="rounded-[1.65rem] bg-white/[0.04] p-5"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">{`第 ${index + 1} 則追問 / Follow-up ${index + 1}`}</p>
-                    <h3 className="mt-3 text-[1.1rem] font-semibold leading-7 text-card-foreground">{followup.prompt}</h3>
+                    <p className="text-sm text-foreground/56">
+                      {t(`追問 ${index + 1}`, `Follow-up ${index + 1}`)}
+                    </p>
+                    <h4 className="mt-2 text-lg font-semibold leading-7 text-card-foreground">
+                      {followup.prompt}
+                    </h4>
                   </div>
-                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-foreground/56">{getStatusLabel(followup.status)}</span>
+                  <span className="text-sm text-foreground/56">
+                    {getStatusLabel(followup.status, t)}
+                  </span>
                 </div>
 
-                <div className="mt-5 h-px w-full bg-[linear-gradient(90deg,rgba(229,192,142,0.24),transparent)]" />
-
                 {followup.status === "ready" ? (
-                  <p className="mt-5 whitespace-pre-line text-sm leading-8 text-foreground/76 sm:leading-[2rem]">{followup.answer}</p>
+                  <p className="mt-4 whitespace-pre-line text-sm leading-8 text-foreground/76">
+                    {followup.answer}
+                  </p>
                 ) : followup.status === "generating" ? (
-                  <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="h-2.5 w-2.5 rounded-full bg-brand-strong motion-safe:animate-[altar-pulse_2.2s_ease-in-out_infinite]" />
-                      <p className="text-sm leading-7 text-card-foreground">這條脈絡正在從同一份解讀裡繼續往前寫。 / The thread is being carried forward from this exact reading.</p>
-                    </div>
-                  </div>
+                  <p className="mt-4 text-sm leading-7 text-foreground/62">
+                    {t("正在整理這段答案。", "This answer is still being prepared.")}
+                  </p>
                 ) : followup.status === "needs_points" ? (
-                  <div className="mt-5 rounded-[1.3rem] border border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(185,144,93,0.12),rgba(185,144,93,0.04))] p-4">
-                    <p className="text-sm leading-7 text-card-foreground">{followup.errorMessage || followupNeedsPointsMessage}</p>
-                    {isCurrent ? <div className="mt-4 grid gap-3"><Link href={topUpHref} className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong motion-reduce:transition-none sm:rounded-[1.4rem]">補回點數並繼續（Restore points and continue）</Link></div> : null}
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm leading-7 text-foreground/76">
+                      {inlineText(followup.errorMessage || followupNeedsPointsMessage)}
+                    </p>
+                    {isCurrent ? (
+                      <Link
+                        href={topUpHref}
+                        className="inline-flex min-h-[3rem] items-center justify-center rounded-[1.2rem] bg-white px-4 text-sm font-semibold text-black transition hover:opacity-92"
+                      >
+                        {t("補點後繼續", "Add points")}
+                      </Link>
+                    ) : null}
                   </div>
                 ) : (
-                  <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-                    <p className="text-sm leading-7 text-card-foreground">{followup.errorMessage || followupFailureMessage}</p>
-                    {isCurrent ? <div className="mt-4 grid gap-3"><button type="button" onClick={handleRetry} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.05] px-4 py-4 text-sm font-semibold leading-5 text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] motion-reduce:transition-none sm:rounded-[1.4rem]">再試一次追問（Try this follow-up again）</button></div> : null}
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm leading-7 text-foreground/76">
+                      {inlineText(followup.errorMessage || followupFailureMessage)}
+                    </p>
+                    {isCurrent ? (
+                      <button
+                        type="button"
+                        onClick={handleRetry}
+                        className="inline-flex min-h-[3rem] items-center justify-center rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+                      >
+                        {t("重新送出", "Try again")}
+                      </button>
+                    ) : null}
                   </div>
                 )}
               </article>
             );
           })}
         </div>
-      ) : (
-        <div className="rounded-[1.65rem] border border-white/10 bg-white/[0.04] p-5 sm:rounded-[1.75rem] sm:p-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">追問脈絡 / Follow-up thread</p>
-          <p className="mt-4 text-sm leading-7 text-muted">目前還沒有送出任何追問。等主報告夠清楚後，你就可以在這裡補上下一個更精準的問題。</p>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

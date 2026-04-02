@@ -10,16 +10,16 @@ export default async function HistoryPage() {
   if (!viewerId) {
     return (
       <HistoryStateCard
-        eyebrow="紀錄入口"
-        eyebrowEn="Archive access"
-        title="先連結身份，才能打開你的解讀紀錄。"
-        titleEn="Link a profile before opening your archive."
-        body="已儲存的解讀會綁定在單一 LINE 身份下，所以這個收藏頁只有在該身份存在時才會開啟。"
-        bodyEn="Saved readings stay attached to one LINE identity, so this shelf only opens once that profile is present."
+        eyebrow="查看紀錄"
+        eyebrowEn="History"
+        title="先登入再看紀錄"
+        titleEn="Sign in to view history"
+        body="紀錄會綁定在同一個 LINE 身份下。"
+        bodyEn="History stays attached to the same LINE profile."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 繼續（Continue with LINE）"
+        primaryLabel="使用 LINE 登入"
         secondaryHref="/"
-        secondaryLabel="回到首頁（Back to home）"
+        secondaryLabel="回到首頁"
       />
     );
   }
@@ -29,16 +29,16 @@ export default async function HistoryPage() {
   if (records.length === 0) {
     return (
       <HistoryStateCard
-        eyebrow="紀錄空白"
-        eyebrowEn="Archive empty"
-        title="這裡還沒有任何已儲存的解讀。"
-        titleEn="No saved readings have settled here yet."
-        body="當一份報告完成且保留到紀錄後，它就會帶著牌陣與追問脈絡回到這個收藏頁。"
-        bodyEn="When a report is completed with history kept on, it will return to this shelf with its cards and follow-up thread."
+        eyebrow="目前沒有紀錄"
+        eyebrowEn="No history yet"
+        title="完成的解讀會留在這裡"
+        titleEn="Finished readings will appear here"
+        body="開始一個新問題，並在完成後保存紀錄。"
+        bodyEn="Start a new question and save the reading when it finishes."
         primaryHref="/question"
-        primaryLabel="開始新的提問（Begin a new question）"
+        primaryLabel="開始抽牌"
         secondaryHref="/"
-        secondaryLabel="回到首頁（Back to home）"
+        secondaryLabel="回到首頁"
       />
     );
   }

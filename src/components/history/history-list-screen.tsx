@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale } from "@/components/i18n/locale-provider";
 import type { HistoryListItem } from "@/lib/history-records";
 
 export function HistoryListScreen({
@@ -6,107 +9,77 @@ export function HistoryListScreen({
 }: {
   records: HistoryListItem[];
 }) {
+  const { inlineText, t } = useLocale();
+
   return (
-    <section className="flex flex-1 flex-col gap-4 px-4 pb-5 pt-4 sm:gap-5 sm:px-5 sm:pb-6 sm:pt-5">
-      <div className="rounded-[1.9rem] border border-white/10 bg-[linear-gradient(180deg,rgba(21,27,41,0.98),rgba(12,15,24,0.96))] p-5 shadow-[var(--shadow-soft)] sm:rounded-[2rem] sm:p-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">
-          命運典藏
+    <section className="flex flex-1 flex-col gap-5 py-6">
+      <div className="space-y-3 pt-4">
+        <p className="text-sm text-foreground/56">{t("我的紀錄", "History")}</p>
+        <h1 className="max-w-[12rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          {t("回來看之前的解讀", "Return to past readings")}
+        </h1>
+        <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          {t("這裡只保留你完成並保存的內容。", "Only finished readings that were saved will stay here.")}
         </p>
-        <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-foreground/38">
-          Destiny archive
-        </p>
-        <h2 className="mt-4">
-          <span className="block font-display text-[2rem] leading-[0.96] text-card-foreground sm:text-[2.25rem]">
-            安靜收納
-            <br />
-            過往每一次解讀。
-          </span>
-          <span className="mt-2 block text-sm leading-6 text-foreground/44">
-            A quiet shelf for past readings.
-          </span>
-        </h2>
-        <div className="mt-4 max-w-[18rem] space-y-2">
-          <p className="text-sm leading-7 text-muted">
-            每一份已儲存的報告，都會連同原始問題、三張牌陣，以及延伸出的追問脈絡一起留在這裡。
-          </p>
-          <p className="text-xs leading-6 text-foreground/42">
-            Every saved report stays here with its original question, three-card spread, and any follow-up thread that grew from it.
-          </p>
-        </div>
       </div>
 
       <div className="grid gap-4">
         {records.map((record) => (
           <article
             key={record.id}
-            className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 shadow-[var(--shadow-soft)] sm:rounded-[1.9rem] sm:p-6"
+            className="rounded-[1.8rem] bg-white/[0.04] p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-strong">
-                  {record.categoryLabel}
+                <p className="text-sm text-foreground/56">
+                  {inlineText(record.categoryLabel)}
                 </p>
-                <h3 className="mt-3 text-[1.15rem] font-semibold leading-7 text-card-foreground">
+                <h2 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
                   {record.question}
-                </h3>
+                </h2>
               </div>
 
-              <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-foreground/56">
+              <span className="text-sm text-foreground/56">
                 {record.createdLabel}
               </span>
             </div>
 
-            <p className="mt-4 text-sm leading-7 text-muted">
-              {record.reportTitle ||
-                `${record.categoryDescription} held inside a three-card report.`}
+            <p className="mt-4 text-sm leading-7 text-foreground/62">
+              {record.reportTitle || inlineText(record.categoryDescription)}
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground/52">
+            <div className="mt-4 flex flex-wrap gap-2">
               {record.cardsSummary.map((card) => (
                 <span
                   key={`${record.id}-${card.id}`}
-                  className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2"
+                  className="rounded-full border border-white/10 bg-black/18 px-3 py-2 text-xs text-foreground/60"
                 >
-                  {card.name} {card.orientation}
+                  {`${inlineText(card.name)} · ${inlineText(card.orientation)}`}
                 </span>
               ))}
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-3">
-              <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-                  追問 / Follow-up
-                </p>
-                <p className="mt-2 text-lg font-semibold text-card-foreground">
-                  {record.followupCount}
-                </p>
-              </div>
-              <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-                  點數 / Points
-                </p>
-                <p className="mt-2 text-lg font-semibold text-card-foreground">
-                  {record.totalSpentPoints}
-                </p>
-              </div>
-              <div className="rounded-[1.25rem] border border-white/10 bg-black/18 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/42">
-                  更新時間 / Updated
-                </p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-card-foreground">
-                  {record.updatedLabel}
-                </p>
-              </div>
+            <div className="mt-5 flex items-center justify-between gap-4 text-sm text-foreground/56">
+              <span>
+                {t(
+                  `追問 ${record.followupCount} 次`,
+                  `${record.followupCount} follow-ups`,
+                )}
+              </span>
+              <span>
+                {t(
+                  `共 ${record.totalSpentPoints} 點`,
+                  `${record.totalSpentPoints} pts spent`,
+                )}
+              </span>
             </div>
 
-            <div className="mt-6 grid gap-3">
-              <Link
-                href={`/history/${record.id}`}
-                className="min-h-[3.5rem] rounded-[1.35rem] border border-line-strong bg-brand px-4 py-4 text-center text-sm font-semibold leading-5 text-black transition hover:bg-brand-strong sm:rounded-[1.4rem]"
-              >
-                打開這份紀錄（Open this archive）
-              </Link>
-            </div>
+            <Link
+              href={`/history/${record.id}`}
+              className="mt-5 inline-flex min-h-[3.2rem] w-full items-center justify-center rounded-[1.3rem] bg-white px-4 text-sm font-semibold text-black transition hover:opacity-92"
+            >
+              {t("查看", "Open")}
+            </Link>
           </article>
         ))}
       </div>

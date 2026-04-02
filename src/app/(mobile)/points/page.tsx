@@ -40,16 +40,16 @@ export default async function PointsPage({
   if (!viewerId) {
     return (
       <PointsStateCard
-        eyebrow="點數入口"
-        eyebrowEn="Points access"
-        title="先連結身份，才能打開你的點數餘額。"
-        titleEn="Link a profile before opening your balance."
-        body="點數會綁定在單一 LINE 身份下，因此每次解讀、追問與點數變動都會回到同一個位置。"
-        bodyEn="Points stay attached to one LINE identity so every reading, follow-up, and balance movement returns to the same place."
+        eyebrow="點數"
+        eyebrowEn="Points"
+        title="先登入再查看點數"
+        titleEn="Sign in to view points"
+        body="點數與付款紀錄都會綁定在同一個 LINE 身份下。"
+        bodyEn="Points and payment history stay attached to the same LINE profile."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 繼續（Continue with LINE）"
+        primaryLabel="使用 LINE 登入"
         secondaryHref="/"
-        secondaryLabel="回到首頁（Back to home）"
+        secondaryLabel="回到首頁"
       />
     );
   }
@@ -78,20 +78,16 @@ export default async function PointsPage({
   } catch {
     return (
       <PointsStateCard
-        eyebrow="點數帳本暫停"
-        eyebrowEn="Ledger unavailable"
-        title="點數帳本目前暫時無法顯示。"
-        titleEn="The points ledger is quiet for a moment."
-        body="你的點數仍然綁定在目前身份下，但這個頁面需要再重新整理一次，才能清楚開啟。"
-        bodyEn="The balance is still attached to your profile, but this surface needs another pass before it opens clearly again."
+        eyebrow="點數"
+        eyebrowEn="Points"
+        title="點數頁暫時打不開"
+        titleEn="Points are unavailable right now"
+        body="稍後再試一次，或先回到原本流程。"
+        bodyEn="Try again in a moment, or return to your previous flow."
         primaryHref={getRetryHref(intent, returnTo)}
-        primaryLabel="再試一次（Try again）"
+        primaryLabel="重新整理"
         secondaryHref={intent ? returnTo : "/question"}
-        secondaryLabel={
-          intent
-            ? "回到解讀（Back to reading）"
-            : "開始新的提問（Begin a new question）"
-        }
+        secondaryLabel={intent ? "回到原流程" : "開始抽牌"}
       />
     );
   }

@@ -5,6 +5,7 @@ import { startTransition, useEffect } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
+import { useLocale } from "@/components/i18n/locale-provider";
 import {
   getStepRedirect,
   type TarotFlowStep,
@@ -19,6 +20,7 @@ export function TarotFlowGate({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLocale();
   const { isHydrated: isAuthHydrated, isAuthenticated, ownsViewerId } = useAuth();
   const { isHydrated, session } = useTarotFlow();
   const hasOwnerMismatch = Boolean(session && !ownsViewerId(session.ownerViewerId));
@@ -40,62 +42,32 @@ export function TarotFlowGate({
   }, [isAuthHydrated, isHydrated, pathname, redirectTo, router]);
 
   if (!isHydrated || !isAuthHydrated || redirectTo) {
-    const title =
-      !isHydrated || !isAuthHydrated
-        ? "正在還原這段解讀脈絡。"
-        : !isAuthenticated
-          ? "在繼續解讀前，需要先連結 LINE 身份。"
-          : hasOwnerMismatch
-            ? "這份解讀只會跟著原本開啟它的身份。"
-            : "正在帶你回到正確的那一刻。";
-    const body =
-      !isHydrated || !isAuthHydrated
-        ? "正在把你上一個問題、已選牌陣與儀式進度帶回畫面。"
-        : !isAuthenticated
-          ? "請先登入，讓 session、紀錄與整段解讀流程都綁定在同一個身份下。"
-          : hasOwnerMismatch
-            ? "請使用原本開始這份解讀的身份繼續，或用目前的 LINE 帳號重新開始一份新的流程。"
-            : "下一個畫面會從最後一個完整步驟重新開啟，讓整段流程保持完整。";
-
     return (
-      <section className="flex flex-1 flex-col justify-center gap-4 px-4 pb-5 pt-4 sm:px-5 sm:pb-6 sm:pt-5">
-        <div className="rounded-[1.85rem] border border-white/10 bg-white/[0.04] p-5 shadow-[var(--shadow-soft)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-brand-strong">
-            {isHydrated ? "引導流程" : "還原 session"}
+      <section className="flex flex-1 flex-col justify-center py-8">
+        <div className="space-y-3 rounded-[2rem] bg-white/[0.04] px-5 py-6">
+          <p className="text-sm text-foreground/56">
+            {!isHydrated || !isAuthHydrated
+              ? t("準備中", "Preparing")
+              : t("正在導向", "Redirecting")}
           </p>
-          <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-foreground/38">
-            {isHydrated ? "Guiding the flow" : "Restoring session"}
+          <h1 className="text-[2rem] font-semibold leading-tight tracking-tight text-card-foreground">
+            {!isHydrated || !isAuthHydrated
+              ? t("正在回到你的流程。", "Restoring your flow.")
+              : !isAuthenticated
+                ? t("需要先登入。", "Sign-in required.")
+                : hasOwnerMismatch
+                  ? t("這段解讀屬於另一個身份。", "This reading belongs to another profile.")
+                  : t("帶你回到正確步驟。", "Returning to the right step.")}
+          </h1>
+          <p className="text-sm leading-6 text-foreground/56">
+            {!isHydrated || !isAuthHydrated
+              ? t("請稍候一下。", "Please wait a moment.")
+              : !isAuthenticated
+                ? t("登入後才能繼續這段流程。", "You need to sign in before continuing.")
+                : hasOwnerMismatch
+                  ? t("請使用原本開始這段解讀的帳號，或重新開始。", "Use the profile that started this reading, or begin a new one.")
+                  : t("系統會自動帶你回到可以繼續的位置。", "You will be taken to the next valid step automatically.")}
           </p>
-          <h2 className="mt-4">
-            <span className="block font-display text-[2rem] leading-[0.96] text-card-foreground">
-              {title}
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-foreground/44">
-              {!isHydrated || !isAuthHydrated
-                ? "Restoring the reading thread."
-                : !isAuthenticated
-                  ? "A LINE profile is needed before the reading continues."
-                  : hasOwnerMismatch
-                    ? "This reading stays with the profile that opened it."
-                    : "Returning you to the right moment."}
-            </span>
-          </h2>
-          <div className="mt-4 space-y-2">
-            <p className="text-sm leading-7 text-muted">{body}</p>
-            <p className="text-xs leading-6 text-foreground/42">
-              {!isHydrated || !isAuthHydrated
-                ? "Bringing your last question, chosen cards, and place in the ritual back into view."
-                : !isAuthenticated
-                  ? "Sign in first so the session, archive, and reading path stay attached to one identity."
-                  : hasOwnerMismatch
-                    ? "Continue with the profile that began this reading, or start a fresh one from the current LINE account."
-                    : "The next scene will open from the last complete step, so the flow still feels whole."}
-            </p>
-          </div>
-          <div className="mt-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-foreground/48">
-            <span className="h-2 w-2 rounded-full bg-brand-strong motion-safe:animate-[altar-pulse_2.2s_ease-in-out_infinite]" />
-            <span>請稍候片刻 / Hold for a brief pause</span>
-          </div>
         </div>
       </section>
     );
