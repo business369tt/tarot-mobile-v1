@@ -10,43 +10,99 @@ export function HistoryListScreen({
   records: HistoryListItem[];
 }) {
   const { inlineText, t } = useLocale();
+  const totalFollowups = records.reduce(
+    (sum, record) => sum + record.followupCount,
+    0,
+  );
+  const totalSpentPoints = records.reduce(
+    (sum, record) => sum + record.totalSpentPoints,
+    0,
+  );
+  const latestRecord = records[0] ?? null;
 
   return (
     <section className="flex flex-1 flex-col gap-5 py-6">
       <div className="space-y-3 pt-4">
         <p className="text-sm text-foreground/56">{t("我的紀錄", "History")}</p>
-        <h1 className="max-w-[12rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {t("回來看之前的解讀", "Return to past readings")}
+        <h1 className="max-w-[13rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          {t("每次完整解讀，都留在這裡", "Every finished reading stays here")}
         </h1>
         <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
-          {t("這裡只保留你完成並保存的內容。", "Only finished readings that were saved will stay here.")}
+          {t(
+            "回來重看牌面、主解讀與追問時，這裡會替你保留原本的脈絡。",
+            "Return here to revisit the spread, main reading, and follow-ups together.",
+          )}
         </p>
+      </div>
+
+      <div className="rounded-[1.9rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <h2 className="max-w-[14rem] text-[1.95rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+              {t(
+                `已保存 ${records.length} 份解讀`,
+                `${records.length} saved readings`,
+              )}
+            </h2>
+            <p className="max-w-[18rem] text-sm leading-7 text-foreground/64">
+              {latestRecord
+                ? t(
+                    `最近一份來自 ${latestRecord.createdLabel}，你可以從這裡重新打開並接回當時的問題。`,
+                    `Your latest reading was saved on ${latestRecord.createdLabel}. Open it and return to the same thread.`,
+                  )
+                : t("完成並保存的解讀，會留在這裡。", "Saved readings will stay here.")}
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
+            {t("已保存", "Saved")}
+          </span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">{t("解讀數量", "Readings")}</p>
+            <p className="mt-2 text-lg font-semibold text-card-foreground">
+              {records.length}
+            </p>
+          </div>
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">{t("追問次數", "Follow-ups")}</p>
+            <p className="mt-2 text-lg font-semibold text-card-foreground">
+              {totalFollowups}
+            </p>
+          </div>
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">{t("累計點數", "Points")}</p>
+            <p className="mt-2 text-lg font-semibold text-card-foreground">
+              {totalSpentPoints}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4">
         {records.map((record) => (
           <article
             key={record.id}
-            className="rounded-[1.8rem] bg-white/[0.04] p-5"
+            className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5"
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="space-y-2">
                 <p className="text-sm text-foreground/56">
                   {inlineText(record.categoryLabel)}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
+                <h2 className="text-xl font-semibold leading-8 text-card-foreground">
                   {record.question}
                 </h2>
+                <p className="text-sm leading-7 text-foreground/62">
+                  {record.reportTitle || inlineText(record.categoryDescription)}
+                </p>
               </div>
 
-              <span className="text-sm text-foreground/56">
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
                 {record.createdLabel}
               </span>
             </div>
-
-            <p className="mt-4 text-sm leading-7 text-foreground/62">
-              {record.reportTitle || inlineText(record.categoryDescription)}
-            </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {record.cardsSummary.map((card) => (
@@ -76,9 +132,9 @@ export function HistoryListScreen({
 
             <Link
               href={`/history/${record.id}`}
-              className="mt-5 inline-flex min-h-[3.2rem] w-full items-center justify-center rounded-[1.3rem] bg-white px-4 text-sm font-semibold text-black transition hover:opacity-92"
+              className="mt-5 inline-flex min-h-[3.35rem] w-full items-center justify-center rounded-[1.35rem] bg-white px-4 text-sm font-semibold text-black transition hover:opacity-92"
             >
-              {t("查看", "Open")}
+              {t("重新打開這份解讀", "Open this reading")}
             </Link>
           </article>
         ))}

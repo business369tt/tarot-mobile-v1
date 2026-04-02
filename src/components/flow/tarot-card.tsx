@@ -61,13 +61,15 @@ export function TarotCardBack({
   return (
     <div
       className={`${backSizeClass[variant]} relative overflow-hidden border border-white/12 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] shadow-[0_16px_40px_rgba(0,0,0,0.35)] ${
-        selected ? "ring-1 ring-[rgba(229,192,142,0.34)]" : ""
+        selected
+          ? "ring-2 ring-[rgba(240,203,151,0.45)] shadow-[0_22px_44px_rgba(240,203,151,0.16)]"
+          : ""
       }`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.16),_transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
       <div className="relative flex h-full flex-col justify-between rounded-[inherit] border border-white/8 px-1 py-1">
         <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.24em] text-foreground/34">
-          <span>{t("牌背", "Arcana")}</span>
+          <span>{t("奧祕", "Arcana")}</span>
           <span>{String(order).padStart(2, "0")}</span>
         </div>
 
@@ -78,7 +80,7 @@ export function TarotCardBack({
         </div>
 
         <p className="text-center text-[9px] font-semibold uppercase tracking-[0.24em] text-foreground/44">
-          {t("慢慢選", "Choose gently")}
+          {selected ? t("已選定", "Chosen") : t("順著直覺", "Follow the pull")}
         </p>
       </div>
     </div>

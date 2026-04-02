@@ -62,16 +62,21 @@ export function LocaleProvider({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const savedLocale =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem(STORAGE_KEY)
-        : null;
+    let frameId = 0;
 
-    if (savedLocale === "zh-TW" || savedLocale === "en") {
-      setLocaleState(savedLocale);
-    }
+    frameId = window.requestAnimationFrame(() => {
+      const savedLocale = window.localStorage.getItem(STORAGE_KEY);
 
-    setIsReady(true);
+      if (savedLocale === "zh-TW" || savedLocale === "en") {
+        setLocaleState(savedLocale);
+      }
+
+      setIsReady(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   useEffect(() => {

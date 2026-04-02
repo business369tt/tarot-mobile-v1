@@ -249,6 +249,29 @@ export function PointsScreen(props: PointsScreenProps) {
         ? t("回到原流程", "Back to flow")
         : t("回到首頁", "Back to home");
   const hasClaimedToday = ledger.dailyCheckIn.status === "claimed";
+  const shortfallPoints = props.intent ? Math.max(actionCost - ledger.points, 0) : 0;
+  const canReturnToFlow = Boolean(
+    props.intent &&
+      payment.surface !== "settling" &&
+      (ledger.points >= actionCost || payment.surface === "success"),
+  );
+  const showDailyCheckIn = !canReturnToFlow;
+  const showPackages = !canReturnToFlow;
+  const showTransactions = !props.intent || !canReturnToFlow;
+  const heroEyebrow =
+    payment.surface === "success"
+      ? t("補點完成", "Top-up complete")
+      : payment.surface === "settling"
+        ? t("付款確認中", "Payment settling")
+        : payment.surface === "canceled"
+          ? t("付款已取消", "Payment canceled")
+          : payment.surface === "failed"
+            ? t("補點失敗", "Top-up failed")
+            : props.intent === "reading"
+              ? t("解讀補點", "Reading top-up")
+              : props.intent === "followup"
+                ? t("追問補點", "Follow-up top-up")
+                : t("點數中心", "Points");
 
   const heroTitle =
     payment.surface === "success"
@@ -265,23 +288,74 @@ export function PointsScreen(props: PointsScreenProps) {
               ? t("先補點再開始解讀", "Top up before reading")
               : props.intent === "followup"
                 ? t("先補點再追問", "Top up before follow-up")
-                : t("管理你的點數", "Manage your points");
+                : t("點數與補點", "Points and top-ups");
   const heroBody =
     payment.surface === "success"
       ? props.intent
-        ? t("點數已補回，回到原本流程就能繼續。", "Your points are ready when you return to the flow.")
-        : t("餘額已更新，你可以繼續使用。", "Your balance has been updated.")
+        ? t("點數已補回，現在就能回到剛才的流程。", "Your points are ready. You can return to the same flow now.")
+        : t("餘額已更新，你現在可以直接開始新的解讀。", "Your balance is updated and ready for another reading.")
       : payment.surface === "settling"
-        ? t("系統正在確認這筆付款。", "We are confirming this payment now.")
+        ? t("系統正在確認這筆付款，點數入帳後會自動更新。", "We are confirming this payment now. Your balance will update automatically.")
         : payment.surface === "canceled"
           ? t("這次沒有扣款，也沒有點數變動。", "No charge or points change happened.")
           : payment.surface === "failed"
             ? inlineText(payment.message || getPaymentError(payment))
             : props.intent === "reading"
-              ? t("完成後會直接回到這次解讀。", "After top-up, you will return straight to this reading.")
+              ? t("補到足夠點數後，就能直接回到這次解讀。", "After top-up, you can return straight to this reading.")
               : props.intent === "followup"
-                ? t("完成後會直接回到這次追問。", "After top-up, you will return straight to this follow-up.")
+                ? t("補到足夠點數後，就能直接回到這次追問。", "After top-up, you can return straight to this follow-up.")
                 : t("查看餘額、補點方案與最近的點數變動。", "Review your balance, packages, and recent activity.");
+  const balanceTitle =
+    payment.surface === "success"
+      ? props.intent
+        ? t("現在就能回去繼續", "Ready to continue")
+        : t("點數已順利入帳", "Points settled")
+      : payment.surface === "settling"
+        ? t("安全付款頁已打開", "Payment in progress")
+        : props.intent
+          ? canReturnToFlow
+            ? t("目前點數已足夠", "Enough points now")
+            : t(`還差 ${shortfallPoints} 點`, `${shortfallPoints} points short`)
+          : t("點數會跟著同一個身份保存", "Your balance stays with the same profile");
+  const balanceBody =
+    payment.surface === "success"
+      ? props.intent
+        ? t("回到原本流程後，就會從你剛才停下的地方接著走。", "Return to the same flow and continue from where you left off.")
+        : t("餘額已更新，可以直接開始新的解讀。", "Your balance is updated and ready for another reading.")
+      : payment.surface === "settling"
+        ? t("付款完成後，這裡會自動更新，不需要重新整理。", "This page will update automatically after payment settles.")
+        : props.intent
+          ? canReturnToFlow
+            ? t("你現在不需要再補點，直接回去就可以。", "You do not need more points right now. You can head back.")
+            : isReadingIntent
+              ? t(`這次解讀需要 ${actionCost} 點，先補到足夠就能繼續。`, `This reading needs ${actionCost} points before you continue.`)
+              : t(`這次追問需要 ${actionCost} 點，先補到足夠就能繼續。`, `This follow-up needs ${actionCost} points before you continue.`)
+          : t("餘額、每日回訪與最近變動，都會留在這裡。", "Your balance, daily return, and recent activity all stay here.");
+  const balanceStatusLabel =
+    payment.surface === "success"
+      ? t("可繼續", "Ready")
+      : payment.surface === "settling"
+        ? t("確認中", "Settling")
+        : props.intent
+          ? canReturnToFlow
+            ? t("足夠", "Enough")
+            : t("待補點", "Top up")
+          : t("已同步", "Synced");
+  const packageTitle = props.intent
+    ? isReadingIntent
+      ? t("選一個方案，回到這次解讀", "Choose a package to resume this reading")
+      : t("選一個方案，回到這次追問", "Choose a package to resume this follow-up")
+    : t("補點方案", "Packages");
+  const packageBody = props.intent
+    ? t(
+        shortfallPoints > 0
+          ? `先補至少 ${shortfallPoints} 點，就能直接回到原本流程。`
+          : "想多留一點餘額，也可以現在補點。",
+        shortfallPoints > 0
+          ? `Add at least ${shortfallPoints} points to return to your flow.`
+          : "You can still add more points if you want extra balance.",
+      )
+    : t("選一個適合現在節奏的方案。", "Choose the package that fits your pace now.");
 
   useEffect(() => {
     if (payment.surface !== "settling" || !payment.order) {
@@ -517,7 +591,7 @@ export function PointsScreen(props: PointsScreenProps) {
     <section className="flex flex-1 flex-col gap-5 py-6">
       <div className="space-y-3 pt-4">
         <p className="text-sm text-foreground/56">
-          {props.intent ? t("補點", "Top up") : t("點數", "Points")}
+          {heroEyebrow}
         </p>
         <h1 className="max-w-[14rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
           {heroTitle}
@@ -527,49 +601,74 @@ export function PointsScreen(props: PointsScreenProps) {
         </p>
       </div>
 
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm text-foreground/56">{t("目前餘額", "Available now")}</p>
-            <p className="mt-2 text-[2.4rem] font-semibold leading-none text-card-foreground">
-              {ledger.points}
+      <div className="rounded-[1.9rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <h2 className="max-w-[15rem] text-[1.95rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+              {balanceTitle}
+            </h2>
+            <p className="max-w-[18rem] text-sm leading-7 text-foreground/64">
+              {balanceBody}
             </p>
           </div>
-          <p className="text-sm text-foreground/56">pts</p>
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
+            {balanceStatusLabel}
+          </span>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-            <p className="text-sm text-foreground/56">{t("解讀費用", "Reading cost")}</p>
-            <p className="mt-2 text-lg font-semibold text-card-foreground">
-              {ledger.readingCostPoints} pts
+            <p className="text-sm text-foreground/56">{t("目前餘額", "Available now")}</p>
+            <p className="mt-2 text-[2rem] font-semibold leading-none text-card-foreground">
+              {ledger.points}
             </p>
+            <p className="mt-2 text-sm text-foreground/48">{t("點", "points")}</p>
           </div>
           <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-            <p className="text-sm text-foreground/56">{t("追問費用", "Follow-up cost")}</p>
+            <p className="text-sm text-foreground/56">
+              {props.intent
+                ? isReadingIntent
+                  ? t("這次解讀需要", "This reading needs")
+                  : t("這次追問需要", "This follow-up needs")
+                : t("解讀費用", "Reading cost")}
+            </p>
             <p className="mt-2 text-lg font-semibold text-card-foreground">
-              {ledger.followupCostPoints} pts
+              {props.intent ? actionCost : ledger.readingCostPoints} {t("點", "pts")}
             </p>
           </div>
         </div>
 
         {props.intent ? (
-          <div className="mt-4 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-            <p className="text-sm text-foreground/56">
-              {isReadingIntent
-                ? t("這次解讀需要", "This reading needs")
-                : t("這次追問需要", "This follow-up needs")}
-            </p>
-            <p className="mt-2 text-lg font-semibold text-card-foreground">
-              {actionCost} pts
-            </p>
+          <div className="mt-3 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-foreground/56">
+                {canReturnToFlow
+                  ? t("下一步", "Next")
+                  : t("還差多少", "Still needed")}
+              </p>
+              <p className="text-sm font-semibold text-card-foreground">
+                {canReturnToFlow ? t("可以返回", "Ready to return") : `${shortfallPoints} ${t("點", "pts")}`}
+              </p>
+            </div>
             <p className="mt-2 text-sm leading-6 text-foreground/62">
-              {ledger.points >= actionCost
-                ? t("目前餘額已足夠。", "Your current balance is enough.")
-                : t("補點後就能直接回到原本流程。", "After top-up, you can return straight to the same flow.")}
+              {canReturnToFlow
+                ? t("點數已經足夠，現在回去就能接著走。", "You have enough points now. Return and continue.")
+                : t("補點完成後，系統會把你帶回原本流程。", "Once your points settle, you can return straight to the same flow.")}
             </p>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-3 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-foreground/56">{t("追問費用", "Follow-up cost")}</p>
+              <p className="text-sm font-semibold text-card-foreground">
+                {ledger.followupCostPoints} {t("點", "pts")}
+              </p>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-foreground/62">
+              {t("解讀與追問都會從這裡扣點，也會在這裡留下記錄。", "Readings and follow-ups both spend points from here and appear in this history.")}
+            </p>
+          </div>
+        )}
       </div>
 
       {noticeMessage ? (
@@ -597,148 +696,177 @@ export function PointsScreen(props: PointsScreenProps) {
         </div>
       ) : null}
 
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
+      {showDailyCheckIn ? (
+        <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-card-foreground">
+                {t("每日回訪", "Daily return")}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-foreground/62">
+                {hasClaimedToday
+                  ? t("今天已經領過了。", "Already collected today.")
+                  : props.intent
+                    ? t(
+                        `先領今日的 ${ledger.dailyCheckIn.rewardPoints} 點，再決定要不要補點。`,
+                        `Collect today's ${ledger.dailyCheckIn.rewardPoints} points before topping up.`,
+                      )
+                    : t(
+                        `今天可領 ${ledger.dailyCheckIn.rewardPoints} 點。`,
+                        `${ledger.dailyCheckIn.rewardPoints} points are available today.`,
+                      )}
+              </p>
+            </div>
+            <span className="text-sm text-foreground/56">
+              {hasClaimedToday ? t("已領取", "Collected") : t("可領取", "Available")}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={hasClaimedToday || isClaimingCheckIn}
+            onClick={() => {
+              void handleDailyCheckIn();
+            }}
+            className="mt-5 min-h-[3.5rem] w-full rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {hasClaimedToday
+              ? t("今日已領取", "Collected today")
+              : isClaimingCheckIn
+                ? t("領取中", "Collecting")
+                : t("領取今日點數", "Collect today")}
+          </button>
+        </div>
+      ) : null}
+
+      {showPackages ? (
+        <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
+          <div className="space-y-2">
             <h2 className="text-lg font-semibold text-card-foreground">
-              {t("每日回訪", "Daily return")}
+              {packageTitle}
             </h2>
-            <p className="mt-2 text-sm leading-7 text-foreground/62">
-              {hasClaimedToday
-                ? t("今天已經領過了。", "Already collected today.")
-                : t(
-                    `今天可領 ${ledger.dailyCheckIn.rewardPoints} 點。`,
-                    `${ledger.dailyCheckIn.rewardPoints} points are available today.`,
-                  )}
+            <p className="text-sm leading-7 text-foreground/62">
+              {packageBody}
             </p>
           </div>
-          <span className="text-sm text-foreground/56">
-            {hasClaimedToday ? t("已領取", "Collected") : t("可領取", "Available")}
-          </span>
-        </div>
 
-        <button
-          type="button"
-          disabled={hasClaimedToday || isClaimingCheckIn}
-          onClick={() => {
-            void handleDailyCheckIn();
-          }}
-          className="mt-5 min-h-[3.5rem] w-full rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          {hasClaimedToday
-            ? t("今日已領取", "Collected today")
-            : isClaimingCheckIn
-              ? t("領取中", "Collecting")
-              : t("領取今日點數", "Collect today")}
-        </button>
-      </div>
-
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t("補點方案", "Packages")}
-          </h2>
-          <p className="text-sm leading-7 text-foreground/62">
-            {t("選一個適合現在的方案。", "Choose the option that fits you now.")}
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-3">
-          {ledger.packages.map((item) => {
-            const isRecommended = item.id === recommendedPackageId;
-            const isPaidPackage =
-              payment.surface === "success" && payment.order?.packageId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                className={`rounded-[1.5rem] border p-5 ${
-                  isRecommended
-                    ? "border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]"
-                    : "border-white/10 bg-black/18"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-card-foreground">
-                      {inlineText(item.label)}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-foreground/62">
-                      {inlineText(item.caption)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-card-foreground">
-                      {item.priceLabel}
-                    </p>
-                    <p className="mt-2 text-sm text-foreground/56">+{item.points} pts</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isProcessing || payment.surface === "settling"}
-                  onClick={() => {
-                    void handleTopUp(item);
-                  }}
-                  className="mt-5 min-h-[3.5rem] w-full rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {isPaidPackage
-                    ? t("已入帳", "Paid")
-                    : isProcessing
-                      ? t("前往付款中", "Opening payment")
-                      : payment.surface === "settling"
-                        ? t("等待確認", "Waiting")
-                        : t("選這個方案", "Choose this")}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t("最近變動", "Recent activity")}
-          </h2>
-          <span className="text-sm text-foreground/56">
-            {hasTransactions
-              ? t(
-                  `最近 ${Math.min(ledger.transactions.length, 24)} 筆`,
-                  `Last ${Math.min(ledger.transactions.length, 24)}`,
-                )
-              : t("目前沒有資料", "No activity")}
-          </span>
-        </div>
-
-        {hasTransactions ? (
           <div className="mt-4 grid gap-3">
-            {ledger.transactions.map((entry) => (
-              <TransactionItem
-                key={entry.id}
-                entry={entry}
-                inlineText={inlineText}
-              />
-            ))}
+            {ledger.packages.map((item) => {
+              const isRecommended = item.id === recommendedPackageId;
+              const isPaidPackage =
+                payment.surface === "success" && payment.order?.packageId === item.id;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`rounded-[1.5rem] border p-5 ${
+                    isRecommended
+                      ? "border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]"
+                      : "border-white/10 bg-black/18"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-semibold text-card-foreground">
+                          {inlineText(item.label)}
+                        </h3>
+                        {isRecommended ? (
+                          <span className="rounded-full border border-[rgba(229,192,142,0.18)] bg-[rgba(185,144,93,0.12)] px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-[#f0cb97]">
+                            {t("最短路徑", "Best fit")}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-sm leading-7 text-foreground/62">
+                        {inlineText(item.caption)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-card-foreground">
+                        {item.priceLabel}
+                      </p>
+                      <p className="mt-2 text-sm text-foreground/56">+{item.points} {t("點", "pts")}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isProcessing || payment.surface === "settling"}
+                    onClick={() => {
+                      void handleTopUp(item);
+                    }}
+                    className="mt-5 min-h-[3.5rem] w-full rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {isPaidPackage
+                      ? t("已入帳", "Paid")
+                      : isProcessing
+                        ? t("前往付款中", "Opening payment")
+                        : payment.surface === "settling"
+                          ? t("等待確認", "Waiting")
+                          : isRecommended && props.intent
+                            ? t("選這個，最快繼續", "Best to continue")
+                            : t("選這個方案", "Choose this")}
+                  </button>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <p className="mt-4 text-sm leading-7 text-foreground/62">
-            {t(
-              "補點、使用點數或領取每日回訪後，這裡會留下紀錄。",
-              "Top-ups, spending, and daily returns will appear here.",
-            )}
-          </p>
-        )}
-      </div>
+        </div>
+      ) : null}
+
+      {showTransactions ? (
+        <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {t("最近變動", "Recent activity")}
+            </h2>
+            <span className="text-sm text-foreground/56">
+              {hasTransactions
+                ? t(
+                    `最近 ${Math.min(ledger.transactions.length, 24)} 筆`,
+                    `Last ${Math.min(ledger.transactions.length, 24)}`,
+                  )
+                : t("目前沒有資料", "No activity")}
+            </span>
+          </div>
+
+          {hasTransactions ? (
+            <div className="mt-4 grid gap-3">
+              {ledger.transactions.map((entry) => (
+                <TransactionItem
+                  key={entry.id}
+                  entry={entry}
+                  inlineText={inlineText}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm leading-7 text-foreground/62">
+              {t(
+                "補點、使用點數或領取每日回訪後，這裡會留下紀錄。",
+                "Top-ups, spending, and daily returns will appear here.",
+              )}
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div className="mt-auto grid gap-3">
-        <Link
-          href={cancelHref}
-          className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
-        >
-          {cancelLabel}
-        </Link>
+        {canReturnToFlow ? (
+          <Link
+            href={cancelHref}
+            className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92"
+          >
+            {cancelLabel}
+          </Link>
+        ) : (
+          <Link
+            href={cancelHref}
+            className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+          >
+            {cancelLabel}
+          </Link>
+        )}
 
         {!props.intent ? (
           <Link

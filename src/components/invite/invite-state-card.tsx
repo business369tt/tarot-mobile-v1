@@ -18,20 +18,22 @@ export function InviteStateCard(props: {
   const { locale } = useLocale();
 
   return (
-    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
-      <div className="space-y-3 pt-6">
-        <p className="text-sm text-foreground/56">
-          {locale === "zh-TW" ? props.eyebrow : (props.eyebrowEn ?? props.eyebrow)}
-        </p>
-        <h1 className="max-w-[14rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {locale === "zh-TW" ? props.title : (props.titleEn ?? props.title)}
-        </h1>
-        <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
-          {locale === "zh-TW" ? props.body : (props.bodyEn ?? props.body)}
-        </p>
+    <section className="flex flex-1 flex-col gap-5 py-6">
+      <div className="rounded-[1.95rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+        <div className="space-y-3 pt-1">
+          <p className="text-sm text-foreground/56">
+            {locale === "zh-TW" ? props.eyebrow : (props.eyebrowEn ?? props.eyebrow)}
+          </p>
+          <h1 className="max-w-[14rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+            {locale === "zh-TW" ? props.title : (props.titleEn ?? props.title)}
+          </h1>
+          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+            {locale === "zh-TW" ? props.body : (props.bodyEn ?? props.body)}
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-3">
+      <div className="mt-auto grid gap-3">
         <Link
           href={props.primaryHref}
           className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-center text-base font-semibold text-black transition hover:opacity-92"

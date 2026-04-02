@@ -1,6 +1,9 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import type { ITXClientDenyList } from "@prisma/client/runtime/client";
 
+// The generated Prisma client shape differs across environments here, so we keep
+// a wide compatibility type and narrow at the usage sites that rely on delegates.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PrismaClientLike = Record<string, any>;
 
 type PrismaClientConstructor = new (options?: {
@@ -8,6 +11,7 @@ type PrismaClientConstructor = new (options?: {
   log?: Array<"error" | "warn">;
 }) => PrismaClientLike;
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PrismaClient } = require("@prisma/client") as {
   PrismaClient: PrismaClientConstructor;
 };

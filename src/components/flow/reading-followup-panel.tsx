@@ -79,10 +79,21 @@ function getStatusLabel(
   t: (zh: string, en: string) => string,
 ) {
   if (status === "ready") return t("已完成", "Ready");
-  if (status === "needs_points") return t("需要點數", "Needs points");
+  if (status === "needs_points") return t("需補點", "Needs points");
   if (status === "failed") return t("重試", "Retry");
   if (status === "generating") return t("生成中", "Generating");
   return t("待命", "Idle");
+}
+
+function getFollowupModelLine(
+  record: FollowupRecord | null,
+  t: (zh: string, en: string) => string,
+) {
+  if (!record) {
+    return t("AI 追問", "AI follow-up");
+  }
+
+  return `MiniMax · ${record.model}`;
 }
 
 export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
@@ -116,6 +127,32 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
         };
   const { status, currentRecord, records, errorMessage, pointsState } = state;
   const isLocked = status === "generating" || status === "needs_points";
+  const statusLabel = getStatusLabel(status, t);
+  const modelLine = getFollowupModelLine(currentRecord, t);
+  const introTitle = !canOpen
+    ? t("主解讀完成後，就能繼續追問", "Follow-up opens once the reading is ready")
+    : status === "needs_points"
+      ? t("補點後，繼續把這條線問下去", "Add points to continue this thread")
+      : status === "failed"
+        ? t("這次追問沒有完整落下", "This follow-up did not fully settle")
+        : status === "generating"
+          ? t("AI 正在整理你的下一個問題", "Your next question is being prepared")
+          : t("想再深入一點，就再問一次", "Ask one more question to go deeper");
+  const introBody = !canOpen
+    ? t("等主解讀完成後，這裡就會開放。", "This opens after the main reading is ready.")
+    : status === "needs_points"
+      ? inlineText(errorMessage || followupNeedsPointsMessage)
+      : status === "failed"
+        ? inlineText(errorMessage || followupFailureMessage)
+        : status === "generating"
+          ? t(
+              "AI 會沿著你剛才的主解讀往下整理，請稍等片刻。",
+              "The AI is continuing from your main reading now.",
+            )
+          : t(
+              `每次追問會消耗 ${followupCostPoints} 點，回答會直接接在這份解讀後面。`,
+              `Each follow-up costs ${followupCostPoints} points and continues this reading.`,
+            );
 
   useEffect(() => {
     resumeHandledIdRef.current = null;
@@ -221,7 +258,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
     return () => {
       active = false;
     };
-  }, [applyFollowupResponse, canOpen, sessionId]);
+  }, [canOpen, sessionId]);
 
   useEffect(() => {
     if (!sessionId || status !== "generating") return;
@@ -239,7 +276,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [applyFollowupResponse, sessionId, status]);
+  }, [sessionId, status]);
 
   useEffect(() => {
     if (
@@ -255,7 +292,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
       router.replace(pathname);
     });
     void continueFollowup({ followupId: currentRecord.id, force: true });
-  }, [continueFollowup, currentRecord, pathname, resumeIntent, router]);
+  }, [currentRecord, pathname, resumeIntent, router]);
 
   function handleSubmit() {
     const prompt = draft.trim();
@@ -274,29 +311,37 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="space-y-3">
-          <p className="text-sm text-foreground/56">
-            {t("想繼續問？", "Want to continue?")}
+      <section className="rounded-[1.9rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
+                {t("AI 追問", "AI follow-up")}
+              </span>
+              <span className="text-xs text-foreground/52">{modelLine}</span>
+            </div>
+            <h3 className="max-w-[15rem] text-[1.95rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+              {introTitle}
+            </h3>
+            <p className="max-w-[18rem] text-sm leading-7 text-foreground/64">
+              {introBody}
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
+            {statusLabel}
+          </span>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-[1.3rem] border border-white/10 bg-black/18 px-4 py-3">
+          <p className="text-sm text-foreground/62">
+            {t("每次追問", "Per follow-up")}
           </p>
-          <h3 className="text-[1.9rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-            {t("在同一份解讀裡追問", "Ask a follow-up")}
-          </h3>
-          <p className="max-w-[18rem] text-sm leading-7 text-foreground/62">
-            {!canOpen
-              ? t("主解讀完成後，這裡才會打開。", "This opens once the main reading is ready.")
-              : status === "needs_points"
-                ? inlineText(errorMessage || followupNeedsPointsMessage)
-                : status === "failed"
-                  ? inlineText(errorMessage || followupFailureMessage)
-                  : t(
-                      `每次追問會消耗 ${followupCostPoints} 點。`,
-                      `Each follow-up costs ${followupCostPoints} points.`,
-                    )}
+          <p className="text-sm font-semibold text-card-foreground">
+            {t(`${followupCostPoints} 點`, `${followupCostPoints} points`)}
           </p>
         </div>
 
-        <div className="mt-5 rounded-[1.4rem] border border-white/10 bg-black/18 p-4">
+        <div className="mt-5 rounded-[1.45rem] border border-white/10 bg-black/18 p-4">
           <textarea
             value={draft}
             onChange={(event) => {
@@ -304,25 +349,34 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
             }}
             disabled={!canOpen || isLocked}
             placeholder={t(
-              "例如：這段關係接下來我該注意什麼？",
-              "For example: What should I pay attention to next in this relationship?",
+              "例如：我接下來最該注意的是什麼？",
+              "For example: What should I pay attention to next?",
             )}
             rows={4}
             className="min-h-[7rem] w-full resize-none bg-transparent text-sm leading-7 text-card-foreground outline-none placeholder:text-foreground/30 disabled:cursor-not-allowed disabled:opacity-70"
           />
         </div>
 
+        <p className="mt-3 text-sm leading-6 text-foreground/52">
+          {!canOpen
+            ? t("主解讀完成後，這裡會自動開放。", "This opens after the main reading is ready.")
+            : t(
+                "追問會沿著你剛才的解讀往下延伸，不需要重新抽牌。",
+                "Your follow-up continues from this reading without a new draw.",
+              )}
+        </p>
+
         <div className="mt-5 grid gap-3">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!canOpen || isLocked || !draft.trim()}
-            className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
+            className="min-h-[3.65rem] rounded-[1.45rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {status === "generating"
-              ? t("生成中", "Generating")
+              ? t("AI 追問生成中", "Generating follow-up")
               : status === "needs_points"
-                ? t("等待補點", "Needs points")
+                ? t("先補點再繼續", "Add points first")
                 : t("送出追問", "Ask follow-up")}
           </button>
 
@@ -331,7 +385,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
               href={topUpHref}
               className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
             >
-              {t("先去補點", "Add points")}
+              {t("補入點數", "Add points")}
             </Link>
           ) : status === "failed" && currentRecord ? (
             <button
@@ -339,32 +393,49 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
               onClick={handleRetry}
               className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
             >
-              {t("重新送出", "Try again")}
+              {t("重新送出追問", "Try again")}
             </button>
           ) : null}
         </div>
-      </div>
+      </section>
 
       {records.length > 0 ? (
-        <div className="grid gap-4">
+        <section className="grid gap-4">
+          <div className="space-y-2">
+            <p className="text-sm text-foreground/46">
+              {t("追問紀錄", "Follow-up history")}
+            </p>
+            <h3 className="text-[1.45rem] font-semibold tracking-tight text-card-foreground">
+              {t("沿著同一條線往下看", "Continue the same thread")}
+            </h3>
+          </div>
+
           {records.map((followup, index) => {
             const isCurrent = currentRecord?.id === followup.id;
+            const modelLabel = `MiniMax · ${followup.model}`;
 
             return (
               <article
                 key={followup.id}
-                className="rounded-[1.65rem] bg-white/[0.04] p-5"
+                className={`rounded-[1.7rem] border p-5 ${
+                  isCurrent
+                    ? "border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))]"
+                    : "border-white/8 bg-white/[0.04]"
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-foreground/56">
-                      {t(`追問 ${index + 1}`, `Follow-up ${index + 1}`)}
-                    </p>
-                    <h4 className="mt-2 text-lg font-semibold leading-7 text-card-foreground">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm text-foreground/56">
+                        {t(`追問 ${index + 1}`, `Follow-up ${index + 1}`)}
+                      </p>
+                      <span className="text-xs text-foreground/46">{modelLabel}</span>
+                    </div>
+                    <h4 className="text-lg font-semibold leading-7 text-card-foreground">
                       {followup.prompt}
                     </h4>
                   </div>
-                  <span className="text-sm text-foreground/56">
+                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
                     {getStatusLabel(followup.status, t)}
                   </span>
                 </div>
@@ -375,7 +446,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
                   </p>
                 ) : followup.status === "generating" ? (
                   <p className="mt-4 text-sm leading-7 text-foreground/62">
-                    {t("正在整理這段答案。", "This answer is still being prepared.")}
+                    {t("AI 正在整理這次追問。", "This follow-up is still being prepared.")}
                   </p>
                 ) : followup.status === "needs_points" ? (
                   <div className="mt-4 space-y-3">
@@ -410,7 +481,7 @@ export function ReadingFollowupPanel({ canOpen }: { canOpen: boolean }) {
               </article>
             );
           })}
-        </div>
+        </section>
       ) : null}
     </div>
   );
