@@ -12,7 +12,6 @@ import {
   getPointsIntent,
   getPointsReturnTo,
   type MaybePointsIntent,
-  type PointPackage,
 } from "@/lib/points";
 import { prisma, type TransactionClient } from "@/lib/prisma";
 
@@ -123,15 +122,11 @@ function mapRecordToOrderView(record: NonNullable<TopUpOrderRecord>): TopUpOrder
   };
 }
 
-function getProductDescription(pointPackage: PointPackage) {
-  return `${pointPackage.points} points from ${pointPackage.label} will be added to the same balance used for readings and follow-ups.`;
-}
-
 function getTopUpDescription(order: {
   packageLabel: string;
   provider: string;
 }) {
-  return `Points added via ${getEcpayProviderLabel(order.provider)} · ${order.packageLabel}`;
+  return `Top-up via ${getEcpayProviderLabel(order.provider)} · ${order.packageLabel}`;
 }
 
 function getProviderPaymentIdFromEcpay(payload: Record<string, string>) {
@@ -142,10 +137,10 @@ function getFailureMessageFromEcpay(payload: Record<string, string>) {
   const providerMessage = payload.RtnMsg?.trim();
 
   if (providerMessage) {
-    return `ECPay payment did not complete: ${providerMessage}`;
+    return `ECPay 付款未完成：${providerMessage}`;
   }
 
-  return "This payment did not complete.";
+  return "這次付款沒有完成。";
 }
 
 function buildEcpayReturnUrls(order: NonNullable<TopUpOrderRecord>) {
@@ -465,7 +460,7 @@ export async function markTopUpOrderFailedForViewer(args: {
       data: {
         status: "failed",
         failedAt: order.failedAt ?? new Date(),
-        errorMessage: args.message ?? "This payment did not complete.",
+        errorMessage: args.message ?? "這次付款沒有完成。",
       },
     });
 
@@ -569,9 +564,9 @@ export async function resolvePointsPaymentView(args: {
       order,
       message: order
         ? order.status === "paid"
-          ? "Points have already been added to your balance."
-          : "The payment has not completed yet. You can reopen the same top-up step later."
-        : "This payment return cannot be reopened from this profile.",
+          ? "點數已經補入你的餘額。"
+          : "付款尚未完成，你可以稍後重新打開這筆補點。"
+        : "這筆付款無法在目前帳號下重新開啟。",
     } satisfies PointsPaymentView;
   }
 
@@ -584,7 +579,7 @@ export async function resolvePointsPaymentView(args: {
     return {
       surface: "failed",
       order,
-      message: order?.errorMessage ?? "This payment did not complete.",
+      message: order?.errorMessage ?? "這次付款沒有完成。",
     } satisfies PointsPaymentView;
   }
 
@@ -595,7 +590,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "failed",
         order: null,
-        message: "This payment return cannot be reopened from this profile.",
+        message: "這筆付款無法在目前帳號下重新開啟。",
       } satisfies PointsPaymentView;
     }
 
@@ -603,7 +598,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "success",
         order,
-        message: "Points have been added to your balance.",
+        message: "點數已經補入你的餘額。",
       } satisfies PointsPaymentView;
     }
 
@@ -611,7 +606,7 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "failed",
         order,
-        message: order.errorMessage ?? "This payment did not complete.",
+        message: order.errorMessage ?? "這次付款沒有完成。",
       } satisfies PointsPaymentView;
     }
 
@@ -619,14 +614,14 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "canceled",
         order,
-        message: "The payment has not completed yet. You can reopen the same top-up step later.",
+        message: "付款尚未完成，你可以稍後重新打開這筆補點。",
       } satisfies PointsPaymentView;
     }
 
     return {
       surface: "settling",
       order,
-      message: "Payment is confirmed and the balance is updating now.",
+      message: "付款已確認，系統正在更新點數餘額。",
     } satisfies PointsPaymentView;
   }
 

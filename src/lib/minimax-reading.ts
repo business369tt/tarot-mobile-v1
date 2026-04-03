@@ -53,31 +53,33 @@ function buildReadingPrompt(args: {
         card.orientation === "upright" ? card.uprightText : card.reversedText;
 
       return [
-        `${card.role} (${card.roleSubtitle})`,
-        `Card: ${card.name} [${card.orientation}]`,
-        `Tone: ${card.tone}`,
-        `Interpretive anchor: ${orientationLine}`,
-        `Keywords: ${card.keywords.join(", ")}`,
+        `${card.role}｜${card.roleSubtitle}`,
+        `牌名｜${card.name}`,
+        `牌位方向｜${card.orientation === "upright" ? "正位" : "逆位"}`,
+        `解讀錨點｜${card.tone}`,
+        `關鍵句｜${orientationLine}`,
+        `關鍵詞｜${card.keywords.join("、")}`,
       ].join("\n");
     })
     .join("\n\n");
 
   const system = [
-    "You are the writing engine for a premium tarot mobile product.",
-    "Write in calm, elegant, emotionally intelligent English.",
-    "Be insightful and specific, but never fatalistic, manipulative, or absolute.",
-    "Base the reading only on the provided question, category, and three selected cards.",
-    "Return valid JSON only. Do not wrap the JSON in markdown or code fences.",
+    "你是一位資深塔羅占卜師，擅長用三張牌牌陣為提問者做直接、清楚、準確的解讀。",
+    "你只能使用台灣繁體中文回答，禁止使用英文、雙語、簡體中文、網路口語、模板化心靈雞湯。",
+    "你的語氣要像真正有經驗的塔羅占卜師，能夠看出問題核心、指出局勢走向、直說盲點，並給出可執行的建議。",
+    "你的回答必須明確，不要曖昧，不要閃躲，不要只講可能性，不要把關鍵判斷說得模糊。",
+    "你可以保留塔羅的細膩與分寸，但每一段都要讓提問者知道這副牌到底在說什麼、接下來該怎麼做。",
+    "你只能輸出合法 JSON，不要輸出 markdown、前言、結語或任何額外說明。",
   ].join(" ");
 
   const user = [
-    "Generate one complete tarot reading report for the following session.",
-    `Question: ${args.question}`,
-    `Category: ${categoryMeta.label} — ${categoryMeta.description}`,
-    "Selected cards:",
+    "請根據以下問題與三張牌，產出一份完整的塔羅主解讀。",
+    `提問｜${args.question}`,
+    `主題｜${categoryMeta.label}｜${categoryMeta.description}`,
+    "三張牌如下：",
     cardLines,
     "",
-    "Return a JSON object with exactly these keys:",
+    "請只輸出這個 JSON 結構：",
     "{",
     '  "reportTitle": "string",',
     '  "reportSubtitle": "string",',
@@ -95,13 +97,20 @@ function buildReadingPrompt(args: {
     '  "closingReminder": "string"',
     "}",
     "",
-    "Writing rules:",
-    "1. Keep each field concise enough for a mobile reading product.",
-    "2. Mention the exact card names inside the relevant card reading fields.",
-    "3. The progression field must explain how the three cards move as one sequence.",
-    "4. The nearTermTrend field should focus on the coming days, not months.",
-    "5. The concreteGuidance array must contain exactly three practical suggestions.",
-    "6. The closingReminder field must be one sentence only.",
+    "寫作規則：",
+    "1. 所有欄位都只能用繁體中文。",
+    "2. reportTitle 要像真正占卜報告的標題，短、準、有判斷，不要空泛。",
+    "3. reportSubtitle 要用一句話點出這次解讀的主軸與走向。",
+    "4. questionCore 要直接指出提問者現在真正卡住的是什麼，不要只重述問題。",
+    "5. constellationLine 要把三張牌串成一句完整判斷，說出這個牌陣的主線。",
+    "6. spreadAxis 要講清楚整體局勢怎麼發展，現在最重要的力量是什麼。",
+    "7. cardReadings.threshold、mirror、horizon 必須分別依照該張牌的牌名、正逆位、牌位任務來解釋，不能互相重複。",
+    "8. progression 要講出事情接下來最可能如何推進，語氣要明確。",
+    "9. nearTermTrend 要講近期走勢，讓提問者知道短期內會看到什麼變化。",
+    "10. concreteGuidance 一定要給三條具體可做的建議，而且是可以立刻採取的動作，不要空話。",
+    "11. closingReminder 要像占卜師最後的叮嚀，短而有力。",
+    "12. 解讀時一定要緊扣每張牌本身的象徵與正逆位，不可胡亂泛談，也不可只講抽象心理。",
+    "13. 回答要像真人占卜師，不是客服、不是老師、不是一般 AI 助手。",
   ].join("\n");
 
   return { system, user };
@@ -114,11 +123,12 @@ function buildCardContext(cards: SelectedTarotCard[]) {
         card.orientation === "upright" ? card.uprightText : card.reversedText;
 
       return [
-        `${card.role} (${card.roleSubtitle})`,
-        `Card: ${card.name} [${card.orientation}]`,
-        `Tone: ${card.tone}`,
-        `Interpretive anchor: ${orientationLine}`,
-        `Keywords: ${card.keywords.join(", ")}`,
+        `${card.role}｜${card.roleSubtitle}`,
+        `牌名｜${card.name}`,
+        `牌位方向｜${card.orientation === "upright" ? "正位" : "逆位"}`,
+        `解讀錨點｜${card.tone}`,
+        `關鍵句｜${orientationLine}`,
+        `關鍵詞｜${card.keywords.join("、")}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -134,38 +144,37 @@ function buildFollowupPrompt(args: {
   const categoryMeta = getCategoryMeta(args.category);
   const cardsContext = buildCardContext(args.cards);
   const system = [
-    "You are the follow-up writing engine for a premium tarot mobile product.",
-    "Write in calm, elegant, emotionally intelligent English.",
-    "Treat this as a continuation of one existing reading, not a separate chat session.",
-    "Use the provided question, category, card spread, completed reading, and follow-up prompt only.",
-    "Do not mention policies, system prompts, or hidden reasoning.",
-    "Return plain text only, without markdown headings or bullet lists.",
+    "你是一位資深塔羅占卜師，正在延續同一副牌的主解讀，回覆提問者的追問。",
+    "你只能使用台灣繁體中文，禁止英文、雙語、簡體中文與模糊空話。",
+    "你的回答要像真正占卜師的追問解答：承接原本牌陣、直指核心、說清楚局勢，不繞圈。",
+    "你不能離開這三張牌原本的範圍亂發揮，所有追問都必須以既有牌陣與主解讀為根據。",
+    "請直接輸出純文字答案，不要 markdown，不要條列，不要 JSON。",
   ].join(" ");
 
   const user = [
-    "Continue the tarot reading with one follow-up answer.",
-    `Original question: ${args.question}`,
-    `Category: ${categoryMeta.label} — ${categoryMeta.description}`,
-    "Selected cards:",
+    "請延續這一副牌的主解讀，回答新的追問。",
+    `原始提問｜${args.question}`,
+    `主題｜${categoryMeta.label}｜${categoryMeta.description}`,
+    "三張牌如下：",
     cardsContext,
     "",
-    "Completed reading context:",
-    `Report title: ${args.reading.reportTitle}`,
-    `Question core: ${args.reading.questionCore}`,
-    `Spread axis: ${args.reading.spreadAxis}`,
-    `Progression: ${args.reading.progression}`,
-    `Near-term trend: ${args.reading.nearTermTrend}`,
-    `Concrete guidance: ${args.reading.concreteGuidance.join(" | ")}`,
-    `Closing reminder: ${args.reading.closingReminder}`,
+    "主解讀摘要：",
+    `報告標題｜${args.reading.reportTitle}`,
+    `問題核心｜${args.reading.questionCore}`,
+    `牌陣主線｜${args.reading.spreadAxis}`,
+    `進程判斷｜${args.reading.progression}`,
+    `近期走勢｜${args.reading.nearTermTrend}`,
+    `實際建議｜${args.reading.concreteGuidance.join("、")}`,
+    `收尾提醒｜${args.reading.closingReminder}`,
     "",
-    `Follow-up prompt: ${args.followupPrompt}`,
+    `追問｜${args.followupPrompt}`,
     "",
-    "Writing rules:",
-    "1. Write 3 short paragraphs only.",
-    "2. Keep the answer clearly anchored to this existing reading.",
-    "3. Mention at least one of the card names when it helps answer the follow-up.",
-    "4. Be specific, grounded, and emotionally steady.",
-    "5. End with one gentle next-step sentence, not a dramatic prediction.",
+    "回覆規則：",
+    "1. 用繁體中文完整回答。",
+    "2. 要明確回答追問，不要只說抽象方向。",
+    "3. 要承接原本牌陣，指出是哪一張牌或哪條主線支撐這個判斷。",
+    "4. 可以提醒限制與代價，但不能把回答講成模稜兩可。",
+    "5. 最後用一句簡短叮嚀收尾，像占卜師的提醒。",
   ].join("\n");
 
   return { system, user };
@@ -180,7 +189,8 @@ function extractJsonObject(raw: string) {
     // fall through
   }
 
-  const fenced = direct.match(/```json\s*([\s\S]*?)```/i) ?? direct.match(/```\s*([\s\S]*?)```/i);
+  const fenced =
+    direct.match(/```json\s*([\s\S]*?)```/i) ?? direct.match(/```\s*([\s\S]*?)```/i);
 
   if (fenced?.[1]) {
     return JSON.parse(fenced[1]) as Record<string, unknown>;

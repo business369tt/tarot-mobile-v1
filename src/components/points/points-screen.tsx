@@ -70,7 +70,7 @@ async function requestTopUp(args: {
   if (!response.ok || !data.checkoutUrl || !data.order) {
     throw new Error(
       data.message ||
-        "這次沒有順利打開付款連結，請再試一次同一個補點步驟。 / The payment link did not open this time. Try the same top-up step once more.",
+        "這次沒有順利打開付款頁，請再試一次相同的補點步驟。",
     );
   }
 
@@ -89,8 +89,7 @@ async function requestTopUpOrder(orderId: string) {
 
   if (!response.ok) {
     throw new Error(
-      data.message ||
-        "這次無法從這裡重新打開付款回傳。 / The payment return could not be reopened from here.",
+      data.message || "這次無法重新打開付款結果，請回到點數頁再試一次。",
     );
   }
 
@@ -130,11 +129,11 @@ function appendResumeParam(returnTo: string, resumeValue: string) {
 
 function getPaymentNotice(payment: PointsPaymentView) {
   if (payment.surface === "success" && payment.order) {
-    return `已透過 ${payment.order.providerLabel} 補入 ${payment.order.points} 點。 / ${payment.order.points} points settled via ${payment.order.providerLabel}.`;
+    return `已透過 ${payment.order.providerLabel} 補入 ${payment.order.points} 點。`;
   }
 
   if (payment.surface === "settling") {
-    return "付款正在確認中；點數入帳後這裡會自動更新。 / Payment is settling. This page will update when the points arrive.";
+    return "付款正在確認中，點數入帳後這裡會自動更新。";
   }
 
   return null;
@@ -144,7 +143,7 @@ function getPaymentError(payment: PointsPaymentView) {
   if (payment.surface === "failed") {
     return (
       payment.message ||
-      "這次付款沒有順利完成，你可以稍後重新打開同一個補點步驟。 / The payment did not complete this time. You can reopen the same top-up step later."
+      "這次付款沒有完成，你可以稍後重新打開同一筆補點。"
     );
   }
 
@@ -377,12 +376,9 @@ export function PointsScreen(props: PointsScreenProps) {
           setPayment({
             surface: "failed",
             order: null,
-            message:
-              "這次無法從這個身份重新打開付款回傳。 / The payment return could not be reopened from this profile.",
+            message: "這筆付款無法在目前帳號下重新開啟。",
           });
-          setErrorMessage(
-            "這次無法從這個身份重新打開付款回傳。 / The payment return could not be reopened from this profile.",
-          );
+          setErrorMessage("這筆付款無法在目前帳號下重新開啟。");
           window.clearInterval(intervalId);
           return;
         }
@@ -391,10 +387,10 @@ export function PointsScreen(props: PointsScreenProps) {
           setPayment({
             surface: "success",
             order: nextOrder,
-            message: "點數已經入到你的餘額中。 / The points have settled into your balance.",
+            message: "點數已經補入你的餘額。",
           });
           setNoticeMessage(
-            `已透過 ${nextOrder.providerLabel} 補入 ${nextOrder.points} 點。 / ${nextOrder.points} points settled via ${nextOrder.providerLabel}.`,
+            `已透過 ${nextOrder.providerLabel} 補入 ${nextOrder.points} 點。`,
           );
           setErrorMessage(null);
           window.clearInterval(intervalId);
@@ -422,12 +418,11 @@ export function PointsScreen(props: PointsScreenProps) {
             order: nextOrder,
             message:
               nextOrder.errorMessage ||
-              "這次付款沒有完成入帳。 / This payment did not settle into your balance.",
+              "這次付款沒有成功入帳。",
           });
           setNoticeMessage(null);
           setErrorMessage(
-            nextOrder.errorMessage ||
-              "這次付款沒有完成入帳。 / This payment did not settle into your balance.",
+            nextOrder.errorMessage || "這次付款沒有成功入帳。",
           );
           window.clearInterval(intervalId);
           return;
@@ -438,7 +433,7 @@ export function PointsScreen(props: PointsScreenProps) {
             surface: "canceled",
             order: nextOrder,
             message:
-              "目前還沒有點數變動；等你準備好時，可以重新打開同一個補點步驟。 / No points moved yet. You can reopen the same top-up step whenever you are ready.",
+              "目前還沒有點數變動，等你準備好時可以重新打開同一筆補點。",
           });
           setNoticeMessage(null);
           setErrorMessage(null);
@@ -452,13 +447,10 @@ export function PointsScreen(props: PointsScreenProps) {
         setPayment((current) => ({
           ...current,
           surface: "failed",
-          message:
-            "剛剛無法確認這次付款回傳，請重新打開點數頁再試一次。 / The payment return could not be checked just now. Reopen the points page and try again.",
+          message: "剛剛無法確認付款結果，請重新打開點數頁再試一次。",
         }));
         setNoticeMessage(null);
-        setErrorMessage(
-          "剛剛無法確認這次付款回傳，請重新打開點數頁再試一次。 / The payment return could not be checked just now. Reopen the points page and try again.",
-        );
+        setErrorMessage("剛剛無法確認付款結果，請重新打開點數頁再試一次。");
         window.clearInterval(intervalId);
       }
     }, 2500);
@@ -514,12 +506,12 @@ export function PointsScreen(props: PointsScreenProps) {
           order,
           message:
             surface === "success"
-              ? "點數已經入到你的餘額中。 / The points have settled into your balance."
+              ? "點數已經補入你的餘額。"
               : surface === "failed"
                 ? order.errorMessage ||
-                  "這次付款沒有成功入帳。 / This payment did not settle into your balance."
+                  "這次付款沒有成功入帳。"
                 : surface === "canceled"
-                  ? "目前還沒有點數變動；等你準備好時，可以重新打開同一個補點步驟。 / No points moved yet. You can reopen the same top-up step whenever you are ready."
+                  ? "目前還沒有點數變動，等你準備好時可以重新打開同一筆補點。"
                   : payment.message,
         });
       }
@@ -527,7 +519,7 @@ export function PointsScreen(props: PointsScreenProps) {
       setErrorMessage(null);
     } catch {
       setErrorMessage(
-        "點數帳本暫時安靜了一下，請稍後再試一次。 / The ledger is quiet for a moment. Give it another try shortly.",
+        "點數頁暫時沒有同步成功，請稍後再試一次。",
       );
     }
   }
@@ -548,14 +540,14 @@ export function PointsScreen(props: PointsScreenProps) {
       setPayment({
         surface: "settling",
         order: response.order,
-        message: "正在打開安全付款頁面。 / Opening secure payment...",
+        message: "正在打開安全付款頁面。",
       });
       window.location.assign(response.checkoutUrl);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "這次沒有順利打開付款連結，請再安靜試一次。 / The payment link did not open this time. Give it another quiet try.",
+          : "這次沒有順利打開付款頁，請再試一次。",
       );
     } finally {
       setIsProcessing(false);
@@ -572,16 +564,14 @@ export function PointsScreen(props: PointsScreenProps) {
       setLedger(response.ledger);
       setNoticeMessage(
         response.status === "claimed"
-          ? `今日回訪的 ${response.ledger.dailyCheckIn.rewardPoints} 點已補入餘額。 / Today's ${response.ledger.dailyCheckIn.rewardPoints} points have been added to your balance.`
-          : "今日回訪已經領取過了，點數狀態也已更新。 / Today's return was already collected, and your balance is up to date.",
+          ? `今日回訪的 ${response.ledger.dailyCheckIn.rewardPoints} 點已補入餘額。`
+          : "今天的回訪點數已經領過了，餘額也已更新。",
       );
       startTransition(() => {
         router.refresh();
       });
     } catch {
-      setErrorMessage(
-        "今日回訪暫時還沒有補入，請稍後再試一次。 / Today's return did not settle just yet. Give it another quiet try.",
-      );
+      setErrorMessage("今日回訪暫時沒有入帳，請稍後再試一次。");
     } finally {
       setIsClaimingCheckIn(false);
     }

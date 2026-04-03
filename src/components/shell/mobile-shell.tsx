@@ -41,7 +41,7 @@ export function MobileShell({
   children: ReactNode;
 }>) {
   const pathname = usePathname();
-  const { locale, setLocale, t } = useLocale();
+  const { locale, t } = useLocale();
   const { session, ownsCurrentSession, getResumeRoute } = useTarotFlow();
   const flowHref =
     session && ownsCurrentSession ? getResumeRoute() : "/question";
@@ -59,7 +59,7 @@ export function MobileShell({
       <div className="mx-auto flex min-h-[100svh] max-w-[430px] flex-col px-4 pb-4 pt-[calc(env(safe-area-inset-top)+12px)] sm:px-5">
         <header
           className={`flex items-center justify-between ${
-            isHome ? "pb-2 pt-4" : "py-3"
+            isHome ? "pb-1 pt-3" : "py-3"
           }`}
         >
           <Link
@@ -71,36 +71,15 @@ export function MobileShell({
             {brandLabel}
           </Link>
 
-          <div
-            className={`flex items-center gap-1 rounded-full p-1 ${
+          <span
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ${
               isHome
-                ? "bg-white/[0.03]"
-                : "border border-white/10 bg-white/[0.04]"
+                ? "border border-white/8 bg-white/[0.03] text-card-foreground"
+                : "border border-white/10 bg-white/[0.04] text-card-foreground"
             }`}
           >
-            <button
-              type="button"
-              onClick={() => setLocale("zh-TW")}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                locale === "zh-TW"
-                  ? "bg-white text-black"
-                  : "text-foreground/60 hover:text-foreground"
-              }`}
-            >
-              中
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocale("en")}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                locale === "en"
-                  ? "bg-white text-black"
-                  : "text-foreground/60 hover:text-foreground"
-              }`}
-            >
-              EN
-            </button>
-          </div>
+            中文
+          </span>
         </header>
 
         <main className={`flex flex-1 flex-col ${isHome ? "pb-8" : "pb-6"}`}>

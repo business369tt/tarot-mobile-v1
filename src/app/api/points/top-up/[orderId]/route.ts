@@ -22,7 +22,7 @@ export async function GET(
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "Sign in to view this restore step." },
+      { message: "請先登入，才能查看這筆補點。" },
       { status: 401 },
     );
   }
@@ -32,7 +32,7 @@ export async function GET(
 
   if (!order) {
     return NextResponse.json(
-      { message: "This restore step could not be reopened from here." },
+      { message: "這筆補點目前無法重新打開。" },
       { status: 404 },
     );
   }

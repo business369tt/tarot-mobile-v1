@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "Sign in to restore your balance." },
+      { message: "請先登入，再補點。" },
       { status: 401 },
     );
   }
@@ -45,8 +45,7 @@ export async function POST(request: Request) {
   if (!isEcpayConfigured()) {
     return NextResponse.json(
       {
-        message:
-          "Payments are unavailable on this environment. Add the ECPay settings first, then reopen this restore step.",
+        message: "這個環境目前無法開啟補點，請先完成 ECPay 設定後再試一次。",
       },
       { status: 503 },
     );
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "Set AUTH_URL or NEXT_PUBLIC_APP_URL before opening ECPay from this environment.",
+          "請先設定 AUTH_URL 或 NEXT_PUBLIC_APP_URL，才能開啟這次補點。",
       },
       { status: 503 },
     );
@@ -86,8 +85,7 @@ export async function POST(request: Request) {
     if (!checkoutUrl) {
       return NextResponse.json(
         {
-          message:
-            "This restore order is already being held. Reopen it from the same points page and continue there.",
+          message: "這筆補點已經建立，請回到同一個點數頁繼續。",
           order,
         },
         { status: 409 },
@@ -109,8 +107,8 @@ export async function POST(request: Request) {
         {
           message:
             error.message === "APP_BASE_URL_HTTPS_REQUIRED"
-              ? "ECPay needs an HTTPS AUTH_URL or NEXT_PUBLIC_APP_URL in production."
-              : "ECPay needs AUTH_URL or NEXT_PUBLIC_APP_URL before it can open.",
+              ? "正式環境的 ECPay 補點需要 HTTPS 的 AUTH_URL 或 NEXT_PUBLIC_APP_URL。"
+              : "開啟 ECPay 之前，請先設定 AUTH_URL 或 NEXT_PUBLIC_APP_URL。",
         },
         { status: 503 },
       );
@@ -118,8 +116,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message:
-          "The payment link did not open this time. Try the same top-up step once more.",
+        message: "這次沒有順利打開付款頁，請再試一次相同的補點步驟。",
       },
       { status: 502 },
     );

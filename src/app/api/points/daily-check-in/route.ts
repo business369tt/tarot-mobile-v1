@@ -14,7 +14,7 @@ export async function POST() {
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "Sign in to gather today's points." },
+      { message: "請先登入，才能領取今日點數。" },
       { status: 401 },
     );
   }
@@ -30,8 +30,7 @@ export async function POST() {
   } catch {
     return NextResponse.json(
       {
-        message:
-          "Today's return did not settle just yet. Give it another quiet try.",
+        message: "今日回訪暫時沒有入帳，請稍後再試一次。",
       },
       { status: 500 },
     );

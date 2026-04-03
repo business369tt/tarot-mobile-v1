@@ -12,7 +12,10 @@ export async function GET() {
   const viewerId = await getViewerId();
 
   if (!viewerId) {
-    return NextResponse.json({ message: "Sign in to view your points." }, { status: 401 });
+    return NextResponse.json(
+      { message: "請先登入，才能查看點數。" },
+      { status: 401 },
+    );
   }
 
   const summary = await getViewerPointsLedger(viewerId);

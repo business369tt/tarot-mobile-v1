@@ -65,12 +65,7 @@ export function LocaleProvider({
     let frameId = 0;
 
     frameId = window.requestAnimationFrame(() => {
-      const savedLocale = window.localStorage.getItem(STORAGE_KEY);
-
-      if (savedLocale === "zh-TW" || savedLocale === "en") {
-        setLocaleState(savedLocale);
-      }
-
+      setLocaleState("zh-TW");
       setIsReady(true);
     });
 
@@ -84,17 +79,19 @@ export function LocaleProvider({
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, locale);
-    document.documentElement.lang = locale === "zh-TW" ? "zh-Hant" : "en";
+    window.localStorage.setItem(STORAGE_KEY, "zh-TW");
+    document.documentElement.lang = "zh-Hant";
   }, [isReady, locale]);
 
   return (
     <LocaleContext.Provider
       value={{
         locale,
-        setLocale: setLocaleState,
-        t: (zh, en) => (locale === "zh-TW" ? zh : en),
-        inlineText: (value) => pickInlineText(value, locale),
+        setLocale: () => {
+          setLocaleState("zh-TW");
+        },
+        t: (zh) => zh,
+        inlineText: (value) => pickInlineText(value, "zh-TW"),
       }}
     >
       {children}

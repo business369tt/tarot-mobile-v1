@@ -55,12 +55,10 @@ export type ReadingSectionView = {
 
 export const defaultReadingStatus: ReadingRecordStatus = "idle";
 export const minimaxReadingSource: ReadingSource = "minimax";
-export const readingFailureMessage =
-  "這份報告暫時還沒穩定成形，請再安靜試一次。 / The report could not settle into place just yet. Give it another quiet try.";
-export const readingUnavailableMessage =
-  "這個環境目前還無法使用解讀服務。 / The reading service is not available in this environment yet.";
-export const readingNeedsRevealMessage =
-  "三張牌完整翻開後，報告才會正式打開。 / The report opens only after the three-card reveal is fully complete.";
+export const readingFailureMessage = "這次解讀沒有完整落下，請再試一次。";
+export const readingUnavailableMessage = "這個環境目前無法使用解讀服務。";
+export const readingNeedsRevealMessage = "三張牌都翻開之後，才能開始解讀。";
+
 const supportedCategories = ["love", "career", "self", "decision", "timing"] as const;
 
 function isCategoryId(value: unknown): value is TarotCategoryId {
@@ -150,52 +148,51 @@ export function normalizeStructuredTarotReading(
           .slice(0, 3)
           .map((item: string) => String(item).trim())
       : [
-          "Keep your next step simple enough to act on without forcing certainty.",
-          "Let the strongest emotional signal inform the pace, not the fear around it.",
-          "Return to the spread when the body feels divided, not when urgency spikes.",
+          "先把下一步縮小成你今天就能做的動作，不要再拖著不決。",
+          "不要只看情緒起伏，要看哪一個選擇真的讓局勢往前走。",
+          "如果心裡還很亂，就回到牌陣主線，不要被一時的焦慮帶偏。",
         ];
 
   return {
     reportTitle:
-      String(value?.reportTitle || "").trim() ||
-      `${categoryMeta.label} reading`,
+      String(value?.reportTitle || "").trim() || `${categoryMeta.label}解讀`,
     reportSubtitle:
       String(value?.reportSubtitle || "").trim() ||
-      "A complete three-card report shaped from your question and the revealed spread.",
+      "這份牌陣已經把你的問題攤開，重點是看清楚真正的主線。",
     questionCore:
       String(value?.questionCore || "").trim() ||
-      `The cards treat "${question}" as a live question, asking for steadiness before conclusion.`,
+      `這副牌認為你現在真正卡住的，不只是「${question}」，而是你還沒有看清楚自己最該面對的核心。`,
     constellationLine:
       String(value?.constellationLine || "").trim() ||
-      `${threshold?.name ?? "The first card"}, ${mirror?.name ?? "the second card"}, and ${horizon?.name ?? "the third card"} form one continuous sentence rather than three separate answers.`,
+      `${threshold?.name ?? "第一張牌"}、${mirror?.name ?? "第二張牌"}與${horizon?.name ?? "第三張牌"}不是三個零散訊號，而是一條連續的答案。`,
     spreadAxis:
       String(value?.spreadAxis || "").trim() ||
-      `The spread moves through ${categoryMeta.label.toLowerCase()} with a quieter, more deliberate rhythm than your first reaction may want.`,
+      `整個牌陣把焦點放在${categoryMeta.label}這條主線上，提醒你先看懂局勢，再決定怎麼出手。`,
     cardReadings: {
       threshold:
         String(value?.cardReadings?.threshold || "").trim() ||
-        `${threshold?.name ?? "The first card"} opens the reading by naming what has already begun to move beneath the surface.`,
+        `${threshold?.name ?? "第一張牌"}先把局勢的起點說出來，點出事情真正從哪裡開始失衡。`,
       mirror:
         String(value?.cardReadings?.mirror || "").trim() ||
-        `${mirror?.name ?? "The second card"} reflects the pressure, longing, or distortion that the situation is asking you to see more clearly.`,
+        `${mirror?.name ?? "第二張牌"}照出你現在最需要正視的情緒、盲點或壓力來源。`,
       horizon:
         String(value?.cardReadings?.horizon || "").trim() ||
-        `${horizon?.name ?? "The third card"} points toward the next motion that will feel cleaner if you let timing work with you.`,
+        `${horizon?.name ?? "第三張牌"}指出接下來最可能發生的走向，以及你該怎麼順勢而行。`,
     },
     progression:
       String(value?.progression || "").trim() ||
-      "The three cards move from naming the truth, to clarifying the pattern, to showing the next clean response.",
+      "這副牌的進程很清楚：先看見真相，再拆開卡點，最後才知道下一步怎麼走。",
     nearTermTrend:
       String(value?.nearTermTrend || "").trim() ||
-      "In the near term, the reading favors calm alignment over dramatic movement.",
+      "短期內局勢不會突然翻盤，但只要你照著牌意調整，方向會慢慢轉正。",
     concreteGuidance: [
-      guidance[0] || "Choose the next honest step.",
-      guidance[1] || "Protect your pace.",
-      guidance[2] || "Let clarity arrive in sequence.",
+      guidance[0] || "先做最直接的那一步。",
+      guidance[1] || "不要再逃避真正的卡點。",
+      guidance[2] || "用更穩的節奏回到主線。",
     ],
     closingReminder:
       String(value?.closingReminder || "").trim() ||
-      "Move in the direction that leaves your inner voice less divided afterward.",
+      "這副牌不是要你更焦慮，而是要你做出更清楚的選擇。",
   };
 }
 
@@ -277,50 +274,50 @@ export function buildReadingSections(record: ReadingRecord): ReadingSectionView[
   return [
     {
       id: "core",
-      eyebrow: "I. 問題核心 / Question Core",
-      title: "這次解讀認為你真正想問的是什麼 / What the reading believes this question is truly about",
+      eyebrow: "一、問題核心",
+      title: "這副牌真正指出的核心是什麼",
       body: reading.questionCore,
       accent: record.cardsSnapshot[0]?.keywords[0] ?? "focus",
     },
     {
       id: "axis",
-      eyebrow: "II. 牌陣軸線 / Spread Axis",
-      title: "貫穿整份報告的三張牌軸線 / The three-card line running through the whole report",
+      eyebrow: "二、牌陣主線",
+      title: "三張牌一路串起來的整體答案",
       body: reading.spreadAxis,
       accent: record.cardsSnapshot[1]?.keywords[0] ?? "pattern",
     },
     {
       id: "threshold",
-      eyebrow: "III. 門檻牌 / Threshold Card",
-      title: `${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameZh} 作為開場牌位 / ${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameEn} in its opening role`,
+      eyebrow: "三、第一張牌",
+      title: `${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameZh}在起手位說了什麼`,
       body: reading.cardReadings.threshold,
       accent: threshold?.keywords[1] ?? "opening",
     },
     {
       id: "mirror",
-      eyebrow: "IV. 映照牌 / Mirror Card",
-      title: `${getCardDisplayMeta(mirror?.id ?? "moon").nameZh} 作為映照壓力點 / ${getCardDisplayMeta(mirror?.id ?? "moon").nameEn} as the reflective pressure point`,
+      eyebrow: "四、第二張牌",
+      title: `${getCardDisplayMeta(mirror?.id ?? "moon").nameZh}照出了什麼盲點`,
       body: reading.cardReadings.mirror,
       accent: mirror?.keywords[1] ?? "reflection",
     },
     {
       id: "horizon",
-      eyebrow: "V. 地平牌 / Horizon Card",
-      title: `${getCardDisplayMeta(horizon?.id ?? "sun").nameZh} 指向下一個清楚動作 / ${getCardDisplayMeta(horizon?.id ?? "sun").nameEn} as the next clean movement`,
+      eyebrow: "五、第三張牌",
+      title: `${getCardDisplayMeta(horizon?.id ?? "sun").nameZh}把方向帶往哪裡`,
       body: reading.cardReadings.horizon,
       accent: horizon?.keywords[1] ?? "direction",
     },
     {
       id: "trend",
-      eyebrow: "VI. 近期走向 / Near-Term Trend",
-      title: "接下來這段時間正在要求什麼 / What the next stretch of time is asking for",
+      eyebrow: "六、近期走勢",
+      title: "接下來短期內最可能出現的變化",
       body: reading.nearTermTrend,
       accent: record.cardsSnapshot[2]?.keywords[0] ?? "timing",
     },
     {
       id: "guidance",
-      eyebrow: "VII. 具體指引 / Concrete Guidance",
-      title: "如何順著這份解讀前進，而不是逆著它走 / How to move with the reading instead of against it",
+      eyebrow: "七、實際建議",
+      title: "你現在最該立刻採取的動作",
       body: reading.concreteGuidance.join(" "),
       accent: "practice",
     },

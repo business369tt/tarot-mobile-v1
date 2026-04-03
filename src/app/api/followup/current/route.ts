@@ -70,7 +70,7 @@ function sessionCanReadFollowup(
   if (!record) {
     return {
       ok: false as const,
-      message: "Open a complete reading first so the follow-up has somewhere true to continue from.",
+      message: "請先完成主解讀，追問才有可延續的內容。",
       session: null,
     };
   }
@@ -356,7 +356,7 @@ export async function POST(request: Request) {
       {
         currentFollowup: null,
         followups: [],
-        message: "Write the next question you want this reading to hold before sending it onward.",
+        message: "先把你要追問的問題寫清楚，再送出這次追問。",
       },
       { status: 400 },
     );
@@ -367,7 +367,7 @@ export async function POST(request: Request) {
       {
         currentFollowup: null,
         followups: [],
-        message: "Keep the follow-up focused enough to fit in one calm question.",
+        message: "追問請聚焦成一個清楚問題，不要一次塞太多內容。",
       },
       { status: 400 },
     );

@@ -24,14 +24,12 @@ export type FollowupRecord = {
 };
 
 export const defaultFollowupStatus: FollowupRecordStatus = "idle";
-export const followupFailureMessage =
-  "這條脈絡暫時還沒整理成文字，請再安靜試一次。 / The thread did not settle into words just yet. Give it another calm try.";
-export const followupNeedsReadingMessage =
-  "主解讀完整就緒後，追問才會打開。 / The follow-up can open once the main reading is fully ready.";
+export const followupFailureMessage = "這次追問還沒有完整落下，請再試一次。";
+export const followupNeedsReadingMessage = "主解讀完成之後，才能繼續追問。";
 export const followupNeedsPointsMessage =
-  "你離下一段答案只差一步。請先補回點數，再回到這裡續接脈絡。 / You are one step away from this next answer. Restore points first, then return here and continue the thread.";
+  "點數不足，請先補點，再回來繼續這則追問。";
 export const followupUnavailableMessage =
-  "這個環境目前還無法使用追問服務。 / The follow-up service is not available in this environment yet.";
+  "這個環境目前無法使用追問服務。";
 
 type FollowupRecordInput = {
   id: string;

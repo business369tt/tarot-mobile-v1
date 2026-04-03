@@ -57,7 +57,7 @@ function sessionCanGenerateReading(ownerId: string, record: Awaited<ReturnType<t
   if (!record) {
     return {
       ok: false as const,
-      message: "Start a reading first so the report has a thread to open from.",
+      message: "請先開始一次抽牌，系統才能為你生成解讀。",
       session: null,
     };
   }
@@ -132,7 +132,7 @@ function createInsufficientPointsResponse(availablePoints: number) {
   return NextResponse.json(
     {
       reading: null,
-      message: "You are one step away from the full report. Add points first, then return here and the reading can continue.",
+      message: "你已經很接近完整解讀，請先補點，再回來完成這次解牌。",
       points: {
         available: availablePoints,
         required: readingCostPoints,
@@ -274,7 +274,7 @@ export async function POST(request: Request) {
         where: { id: pendingRecord.id },
         data: {
           status: "failed",
-          errorMessage: "This report still needs points before it can be completed.",
+          errorMessage: "這份解讀需要先補點，才能完整生成。",
           fullReading: null,
         },
       });
