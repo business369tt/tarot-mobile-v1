@@ -11,8 +11,8 @@ This checklist is the final release gate for `tarot-mobile-v1`. It is limited to
 - [ ] `DATABASE_URL` points to a persistent SQLite file path on a single writable production instance.
 - [ ] `APP_TIMEZONE` is set to the business timezone used for daily check-in settlement.
 - [ ] `AUTH_LINE_ID` and `AUTH_LINE_SECRET` are production credentials, not dev or test values.
-- [ ] `STRIPE_SECRET_KEY` is a live secret key.
-- [ ] `STRIPE_WEBHOOK_SECRET` matches the live webhook endpoint at `/api/payments/stripe/webhook`.
+- [ ] `ECPAY_ENV` is set to `production`.
+- [ ] `ECPAY_MERCHANT_ID`, `ECPAY_HASH_KEY`, and `ECPAY_HASH_IV` are production values.
 - [ ] `MINIMAX_API_KEY` is a production key with enough quota for launch traffic.
 - [ ] `MINIMAX_BASE_URL` is `https://api.minimax.io/anthropic` unless MiniMax changes the official Anthropic-compatible endpoint again.
 - [ ] `MINIMAX_MODEL` is a currently enabled production model on the chosen MiniMax plan.
@@ -29,7 +29,7 @@ This checklist is the final release gate for `tarot-mobile-v1`. It is limited to
 ## 2. Third-Party Production Readiness
 
 - [ ] Review and complete [docs/line-production-checklist.md](./line-production-checklist.md).
-- [ ] Review and complete [docs/stripe-production-checklist.md](./stripe-production-checklist.md).
+- [ ] Review and complete [docs/ecpay-production-checklist.md](./ecpay-production-checklist.md).
 - [ ] Review and complete [docs/minimax-production-checklist.md](./minimax-production-checklist.md).
 
 ## 3. Staging Acceptance
@@ -48,8 +48,8 @@ This checklist is the final release gate for `tarot-mobile-v1`. It is limited to
 - [ ] Unmatched routes show the branded 404 page.
 - [ ] Unexpected mobile route render errors show the branded retry fallback.
 - [ ] Missing LINE credentials disable LINE sign-in with clear copy.
-- [ ] Missing Stripe config returns a clear payment unavailable state instead of opening a broken Checkout flow.
-- [ ] Missing app base URL blocks Stripe Checkout creation with a config-specific message.
+- [ ] Missing ECPay config returns a clear payment unavailable state instead of opening a broken payment flow.
+- [ ] Missing app base URL blocks ECPay creation with a config-specific message.
 - [ ] Missing MiniMax config produces productized unavailable copy for reading and follow-up generation.
 - [ ] Invite, points, and history recovery states use production-safe wording and do not mention placeholder or future surfaces.
 
@@ -64,7 +64,7 @@ This checklist is the final release gate for `tarot-mobile-v1`. It is limited to
 ## 6. Final Go / No-Go
 
 - [ ] Production secrets are stored in the deployment platform, not in repo files.
-- [ ] Stripe live webhook delivery has one verified green event in production.
+- [ ] One successful ECPay callback has been observed in production logs.
 - [ ] LINE callback URL has been checked against the final production domain.
 - [ ] MiniMax billing and quota are confirmed for launch day traffic.
 - [ ] Rollback owner, deploy owner, and post-launch monitor owner are explicitly assigned.

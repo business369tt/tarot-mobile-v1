@@ -1,4 +1,11 @@
-﻿import type Stripe from "stripe";
+import {
+  buildEcpayCheckoutFields,
+  createEcpayMerchantTradeNo,
+  getEcpayProviderLabel,
+  type EcpayCheckoutFields,
+  toEcpayTotalAmount,
+} from "@/lib/ecpay";
+import { getAppBaseUrl } from "@/lib/app-env";
 import {
   formatCurrencyMinor,
   getPointPackage,
@@ -8,12 +15,6 @@ import {
   type PointPackage,
 } from "@/lib/points";
 import { prisma, type TransactionClient } from "@/lib/prisma";
-import {
-  getStripeServer,
-  isStripeConfigured,
-  stripeProviderLabel,
-} from "@/lib/stripe";
-import { getAppBaseUrl } from "@/lib/app-env";
 
 export type TopUpOrderStatus = "pending" | "paid" | "canceled" | "failed";
 
@@ -50,7 +51,17 @@ export type PointsPaymentView =
       message: string | null;
     };
 
-type TopUpOrderRecord = Awaited<ReturnType<typeof prisma.topUpOrder.findUnique>>;
+export type EcpayCheckoutLaunch =
+  | {
+      order: TopUpOrderView;
+      action: string;
+      fields: EcpayCheckoutFields;
+    }
+  | {
+      order: TopUpOrderView;
+      action: null;
+      fields: null;
+    };
 
 type TopUpCheckoutArgs = {
   userId: string;
@@ -60,8 +71,31 @@ type TopUpCheckoutArgs = {
   returnTo: string;
 };
 
+type TopUpOrderRecord = Awaited<ReturnType<typeof prisma.topUpOrder.findUnique>>;
+
 function mapIntent(value: string | null): MaybePointsIntent {
   return value === "reading" || value === "followup" ? value : null;
+}
+
+function getEcpayCheckoutPath(orderId: string) {
+  return `/api/payments/ecpay/checkout?order=${encodeURIComponent(orderId)}`;
+}
+
+function buildPointsPathFromOrder(
+  order: Pick<TopUpOrderView, "id" | "intent" | "returnTo">,
+  payment: "success" | "cancel" | "failed",
+) {
+  const searchParams = new URLSearchParams({
+    payment,
+    order: order.id,
+    returnTo: order.returnTo,
+  });
+
+  if (order.intent) {
+    searchParams.set("intent", order.intent);
+  }
+
+  return `/points?${searchParams.toString()}`;
 }
 
 function mapRecordToOrderView(record: NonNullable<TopUpOrderRecord>): TopUpOrderView {
@@ -75,10 +109,12 @@ function mapRecordToOrderView(record: NonNullable<TopUpOrderRecord>): TopUpOrder
     amountMinor: record.amountMinor,
     currency: record.currency,
     amountLabel: formatCurrencyMinor(record.amountMinor, record.currency),
-    providerLabel: stripeProviderLabel,
+    providerLabel: getEcpayProviderLabel(record.provider),
     returnTo: record.returnTo,
     intent: mapIntent(record.intent),
-    checkoutUrl: record.checkoutUrl ?? null,
+    checkoutUrl:
+      record.checkoutUrl ??
+      (record.provider === "ecpay" ? getEcpayCheckoutPath(record.id) : null),
     errorMessage: record.errorMessage ?? null,
     createdAt: record.createdAt.toISOString(),
     paidAt: record.paidAt?.toISOString() ?? null,
@@ -88,77 +124,52 @@ function mapRecordToOrderView(record: NonNullable<TopUpOrderRecord>): TopUpOrder
 }
 
 function getProductDescription(pointPackage: PointPackage) {
-  return `${pointPackage.caption} 補入的 ${pointPackage.points} 點，會進到同一個用於解讀與追問的餘額裡。`;
+  return `${pointPackage.points} points from ${pointPackage.label} will be added to the same balance used for readings and follow-ups.`;
 }
 
-async function createStripeCheckoutSession(args: {
-  orderId: string;
-  userId: string;
-  pointPackage: PointPackage;
-  requestKey: string;
-  intent: MaybePointsIntent;
-  returnTo: string;
+function getTopUpDescription(order: {
+  packageLabel: string;
+  provider: string;
 }) {
-  const stripe = getStripeServer();
-  const baseUrl = getAppBaseUrl();
-  const successUrl = new URL("/points", baseUrl);
-  const cancelUrl = new URL("/points", baseUrl);
+  return `Points added via ${getEcpayProviderLabel(order.provider)} · ${order.packageLabel}`;
+}
 
-  if (args.intent) {
-    successUrl.searchParams.set("intent", args.intent);
-    cancelUrl.searchParams.set("intent", args.intent);
+function getProviderPaymentIdFromEcpay(payload: Record<string, string>) {
+  return payload.TradeNo?.trim() || payload.PaymentNo?.trim() || null;
+}
+
+function getFailureMessageFromEcpay(payload: Record<string, string>) {
+  const providerMessage = payload.RtnMsg?.trim();
+
+  if (providerMessage) {
+    return `ECPay payment did not complete: ${providerMessage}`;
   }
 
-  successUrl.searchParams.set("returnTo", args.returnTo);
-  successUrl.searchParams.set("payment", "success");
-  successUrl.searchParams.set("order", args.orderId);
-
-  cancelUrl.searchParams.set("returnTo", args.returnTo);
-  cancelUrl.searchParams.set("payment", "cancel");
-  cancelUrl.searchParams.set("order", args.orderId);
-
-  const metadata = {
-    orderId: args.orderId,
-    userId: args.userId,
-    packageId: args.pointPackage.id,
-    requestKey: args.requestKey,
-    intent: args.intent ?? "",
-    returnTo: args.returnTo,
-    points: String(args.pointPackage.points),
-  };
-
-  return stripe.checkout.sessions.create(
-    {
-      mode: "payment",
-      success_url: successUrl.toString(),
-      cancel_url: cancelUrl.toString(),
-      client_reference_id: args.orderId,
-      metadata,
-      payment_intent_data: {
-        metadata,
-      },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: args.pointPackage.currency,
-            unit_amount: args.pointPackage.amountMinor,
-            product_data: {
-              name: args.pointPackage.label,
-              description: getProductDescription(args.pointPackage),
-            },
-          },
-        },
-      ],
-    },
-    {
-      idempotencyKey: `checkout:${args.requestKey}`,
-    },
-  );
+  return "This payment did not complete.";
 }
 
-function getTopUpDescription(packageLabel: string) {
-  return `透過 ${packageLabel} 補點 · ${stripeProviderLabel}`;
+function buildEcpayReturnUrls(order: NonNullable<TopUpOrderRecord>) {
+  const baseUrl = getAppBaseUrl();
+  const callbackUrl = new URL("/api/payments/ecpay/callback", baseUrl);
+  const orderResultUrl = new URL("/api/payments/ecpay/return", baseUrl);
+  const clientBackUrl = new URL(
+    buildPointsPathFromOrder(mapRecordToOrderView(order), "cancel"),
+    baseUrl,
+  );
+
+  orderResultUrl.searchParams.set("order", order.id);
+
+  if (order.intent) {
+    orderResultUrl.searchParams.set("intent", order.intent);
+  }
+
+  orderResultUrl.searchParams.set("returnTo", order.returnTo);
+
+  return {
+    callbackUrl: callbackUrl.toString(),
+    orderResultUrl: orderResultUrl.toString(),
+    clientBackUrl: clientBackUrl.toString(),
+  };
 }
 
 async function settleTopUpOrderById(args: {
@@ -220,7 +231,7 @@ async function settleTopUpOrderById(args: {
         kind: "credit",
         source: "top_up",
         requestKey: order.requestKey,
-        description: getTopUpDescription(order.packageLabel),
+        description: getTopUpDescription(order),
       },
     });
 
@@ -248,15 +259,15 @@ async function settleTopUpOrderById(args: {
   });
 }
 
-async function updateOrderStatusByCheckoutSession(args: {
-  checkoutSessionId: string;
-  status: TopUpOrderStatus;
+async function updateOrderStatusByMerchantTradeNo(args: {
+  merchantTradeNo: string;
+  status: "canceled" | "failed";
   message?: string | null;
   providerPaymentId?: string | null;
 }) {
   const order = await prisma.topUpOrder.findUnique({
     where: {
-      checkoutSessionId: args.checkoutSessionId,
+      checkoutSessionId: args.merchantTradeNo,
     },
   });
 
@@ -281,73 +292,6 @@ async function updateOrderStatusByCheckoutSession(args: {
   return mapRecordToOrderView(current);
 }
 
-async function syncPendingOrderWithStripe(order: NonNullable<TopUpOrderRecord>) {
-  if (
-    order.status !== "pending" ||
-    !order.checkoutSessionId ||
-    !isStripeConfigured()
-  ) {
-    return mapRecordToOrderView(order);
-  }
-
-  try {
-    const stripe = getStripeServer();
-    const checkoutSession = await stripe.checkout.sessions.retrieve(
-      order.checkoutSessionId,
-      {
-        expand: ["payment_intent"],
-      },
-    );
-
-    const providerPaymentId =
-      typeof checkoutSession.payment_intent === "string"
-        ? checkoutSession.payment_intent
-        : checkoutSession.payment_intent?.id ?? null;
-
-    if (checkoutSession.payment_status === "paid") {
-      const settled = await settleTopUpOrderById({
-        orderId: order.id,
-        providerPaymentId,
-      });
-
-      return settled ?? mapRecordToOrderView(order);
-    }
-
-    if (checkoutSession.status === "expired") {
-      const canceled = await updateOrderStatusByCheckoutSession({
-        checkoutSessionId: checkoutSession.id,
-        status: "canceled",
-      });
-
-      return canceled ?? mapRecordToOrderView(order);
-    }
-
-    const paymentIntentStatus =
-      typeof checkoutSession.payment_intent === "object" &&
-      checkoutSession.payment_intent
-        ? checkoutSession.payment_intent.status
-        : null;
-
-    if (
-      paymentIntentStatus === "canceled" ||
-      paymentIntentStatus === "requires_payment_method"
-    ) {
-      const failed = await updateOrderStatusByCheckoutSession({
-        checkoutSessionId: checkoutSession.id,
-        status: "failed",
-        message: "這次付款沒有完成。",
-        providerPaymentId,
-      });
-
-      return failed ?? mapRecordToOrderView(order);
-    }
-  } catch (error) {
-    console.error("Unable to sync top-up order with Stripe", error);
-  }
-
-  return mapRecordToOrderView(order);
-}
-
 export async function createTopUpCheckoutOrder(args: TopUpCheckoutArgs) {
   const intent = getPointsIntent(args.intent ?? undefined);
   const returnTo = getPointsReturnTo(args.returnTo, intent);
@@ -363,13 +307,15 @@ export async function createTopUpCheckoutOrder(args: TopUpCheckoutArgs) {
       throw new Error("TOP_UP_REQUEST_CONFLICT");
     }
 
+    const order = mapRecordToOrderView(existingOrder);
+
     return {
-      order: mapRecordToOrderView(existingOrder),
-      checkoutUrl: existingOrder.checkoutUrl,
+      order,
+      checkoutUrl: order.checkoutUrl,
     };
   }
 
-  const draftOrder = await prisma.topUpOrder.create({
+  const order = await prisma.topUpOrder.create({
     data: {
       userId: args.userId,
       packageId: selectedPackage.id,
@@ -378,54 +324,28 @@ export async function createTopUpCheckoutOrder(args: TopUpCheckoutArgs) {
       points: selectedPackage.points,
       amountMinor: selectedPackage.amountMinor,
       currency: selectedPackage.currency,
-      provider: "stripe_checkout",
+      provider: "ecpay",
       status: "pending",
       requestKey: args.requestKey,
       intent,
       returnTo,
+      checkoutSessionId: createEcpayMerchantTradeNo(),
     },
   });
 
-  try {
-    const checkoutSession = await createStripeCheckoutSession({
-      orderId: draftOrder.id,
-      userId: args.userId,
-      pointPackage: selectedPackage,
-      requestKey: args.requestKey,
-      intent,
-      returnTo,
-    });
+  const current = await prisma.topUpOrder.update({
+    where: { id: order.id },
+    data: {
+      checkoutUrl: getEcpayCheckoutPath(order.id),
+    },
+  });
 
-    if (!checkoutSession.url) {
-      throw new Error("CHECKOUT_URL_MISSING");
-    }
+  const view = mapRecordToOrderView(current);
 
-    const current = await prisma.topUpOrder.update({
-      where: { id: draftOrder.id },
-      data: {
-        checkoutSessionId: checkoutSession.id,
-        checkoutUrl: checkoutSession.url,
-      },
-    });
-
-    return {
-      order: mapRecordToOrderView(current),
-      checkoutUrl: checkoutSession.url,
-    };
-  } catch (error) {
-    console.error("Unable to create Stripe Checkout session", error);
-
-    await prisma.topUpOrder.update({
-      where: { id: draftOrder.id },
-      data: {
-        status: "failed",
-        errorMessage: "這次付款連結沒有成功打開。",
-        failedAt: new Date(),
-      },
-    });
-
-    throw error;
-  }
+  return {
+    order: view,
+    checkoutUrl: view.checkoutUrl,
+  };
 }
 
 export async function getTopUpOrderForViewer(orderId: string, userId: string) {
@@ -440,7 +360,56 @@ export async function getTopUpOrderForViewer(orderId: string, userId: string) {
     return null;
   }
 
-  return syncPendingOrderWithStripe(order);
+  return mapRecordToOrderView(order);
+}
+
+export async function getEcpayCheckoutLaunchForViewer(
+  orderId: string,
+  userId: string,
+) {
+  const order = await prisma.topUpOrder.findFirst({
+    where: {
+      id: orderId,
+      userId,
+    },
+  });
+
+  if (!order) {
+    return null;
+  }
+
+  const view = mapRecordToOrderView(order);
+
+  if (
+    order.provider !== "ecpay" ||
+    order.status !== "pending" ||
+    !order.checkoutSessionId
+  ) {
+    return {
+      order: view,
+      action: null,
+      fields: null,
+    } satisfies EcpayCheckoutLaunch;
+  }
+
+  const urls = buildEcpayReturnUrls(order);
+  const totalAmount = toEcpayTotalAmount(order.amountMinor, order.currency);
+  const checkout = buildEcpayCheckoutFields({
+    merchantTradeNo: order.checkoutSessionId,
+    merchantTradeDate: order.createdAt,
+    totalAmount,
+    tradeDesc: "Tarot mobile points top-up",
+    itemName: `${order.packageLabel} x 1`,
+    returnUrl: urls.callbackUrl,
+    orderResultUrl: urls.orderResultUrl,
+    clientBackUrl: urls.clientBackUrl,
+  });
+
+  return {
+    order: view,
+    action: checkout.action,
+    fields: checkout.fields,
+  } satisfies EcpayCheckoutLaunch;
 }
 
 export async function markTopUpOrderCanceledForViewer(
@@ -496,7 +465,7 @@ export async function markTopUpOrderFailedForViewer(args: {
       data: {
         status: "failed",
         failedAt: order.failedAt ?? new Date(),
-        errorMessage: args.message ?? "The payment did not complete this time.",
+        errorMessage: args.message ?? "This payment did not complete.",
       },
     });
 
@@ -506,52 +475,77 @@ export async function markTopUpOrderFailedForViewer(args: {
   return mapRecordToOrderView(order);
 }
 
-export async function settleTopUpOrderFromCheckoutSession(
-  checkoutSession: Stripe.Checkout.Session,
-) {
-  const orderId =
-    checkoutSession.metadata?.orderId ??
-    checkoutSession.client_reference_id ??
-    null;
+export async function settleTopUpOrderFromEcpay(args: {
+  merchantTradeNo: string;
+  providerPaymentId?: string | null;
+}) {
+  const order = await prisma.topUpOrder.findUnique({
+    where: {
+      checkoutSessionId: args.merchantTradeNo,
+    },
+  });
 
-  const existingOrder =
-    (checkoutSession.id
-      ? await prisma.topUpOrder.findUnique({
-          where: {
-            checkoutSessionId: checkoutSession.id,
-          },
-        })
-      : null) ??
-    (orderId
-      ? await prisma.topUpOrder.findUnique({
-          where: {
-            id: orderId,
-          },
-        })
-      : null);
-
-  if (!existingOrder) {
+  if (!order) {
     return null;
   }
 
-  const providerPaymentId =
-    typeof checkoutSession.payment_intent === "string"
-      ? checkoutSession.payment_intent
-      : checkoutSession.payment_intent?.id ?? null;
-
   return settleTopUpOrderById({
-    orderId: existingOrder.id,
-    providerPaymentId,
+    orderId: order.id,
+    providerPaymentId: args.providerPaymentId,
   });
 }
 
-export async function markTopUpOrderFromWebhook(args: {
-  checkoutSessionId: string;
+export async function markTopUpOrderFromEcpay(args: {
+  merchantTradeNo: string;
   status: "canceled" | "failed";
   message?: string | null;
   providerPaymentId?: string | null;
 }) {
-  return updateOrderStatusByCheckoutSession(args);
+  return updateOrderStatusByMerchantTradeNo(args);
+}
+
+export async function settleOrMarkTopUpOrderFromEcpayPayload(
+  payload: Record<string, string>,
+) {
+  const merchantTradeNo = payload.MerchantTradeNo?.trim();
+
+  if (!merchantTradeNo) {
+    return null;
+  }
+
+  const providerPaymentId = getProviderPaymentIdFromEcpay(payload);
+
+  if (payload.RtnCode?.trim() === "1") {
+    return settleTopUpOrderFromEcpay({
+      merchantTradeNo,
+      providerPaymentId,
+    });
+  }
+
+  return markTopUpOrderFromEcpay({
+    merchantTradeNo,
+    status: "failed",
+    message: getFailureMessageFromEcpay(payload),
+    providerPaymentId,
+  });
+}
+
+export function buildPointsPaymentRedirectPath(
+  order: Pick<TopUpOrderView, "id" | "intent" | "returnTo"> | null,
+  payment: "success" | "cancel" | "failed",
+  fallbackOrderId?: string | null,
+) {
+  if (!order) {
+    const searchParams = new URLSearchParams({ payment });
+
+    if (fallbackOrderId) {
+      searchParams.set("order", fallbackOrderId);
+    }
+
+    return `/points?${searchParams.toString()}`;
+  }
+
+  return buildPointsPathFromOrder(order, payment);
 }
 
 export async function resolvePointsPaymentView(args: {
@@ -574,8 +568,10 @@ export async function resolvePointsPaymentView(args: {
       surface: order?.status === "paid" ? "success" : "canceled",
       order,
       message: order
-        ? "目前還沒有點數變動；等你準備好時，可以回到同一個補點步驟。 / No points moved yet. You can return to the same restore step whenever you are ready."
-        : "無法從這個身份重新打開該付款回傳。",
+        ? order.status === "paid"
+          ? "Points have already been added to your balance."
+          : "The payment has not completed yet. You can reopen the same top-up step later."
+        : "This payment return cannot be reopened from this profile.",
     } satisfies PointsPaymentView;
   }
 
@@ -588,7 +584,7 @@ export async function resolvePointsPaymentView(args: {
     return {
       surface: "failed",
       order,
-      message: order?.errorMessage ?? "這次付款沒有成功入帳。",
+      message: order?.errorMessage ?? "This payment did not complete.",
     } satisfies PointsPaymentView;
   }
 
@@ -599,38 +595,38 @@ export async function resolvePointsPaymentView(args: {
       return {
         surface: "failed",
         order: null,
-        message: "無法從這個身份重新打開付款回傳。",
+        message: "This payment return cannot be reopened from this profile.",
       } satisfies PointsPaymentView;
     }
 
-    if (order?.status === "paid") {
+    if (order.status === "paid") {
       return {
         surface: "success",
         order,
-        message: "點數已經入到你的餘額中。",
+        message: "Points have been added to your balance.",
       } satisfies PointsPaymentView;
     }
 
-    if (order?.status === "failed") {
+    if (order.status === "failed") {
       return {
         surface: "failed",
         order,
-        message: order.errorMessage ?? "這次付款沒有成功入帳。",
+        message: order.errorMessage ?? "This payment did not complete.",
       } satisfies PointsPaymentView;
     }
 
-    if (order?.status === "canceled") {
+    if (order.status === "canceled") {
       return {
         surface: "canceled",
         order,
-        message: "目前還沒有點數變動；等你準備好時，可以重新打開同一個補點步驟。",
+        message: "The payment has not completed yet. You can reopen the same top-up step later.",
       } satisfies PointsPaymentView;
     }
 
     return {
       surface: "settling",
       order,
-      message: "付款已確認，系統正在更新餘額。",
+      message: "Payment is confirmed and the balance is updating now.",
     } satisfies PointsPaymentView;
   }
 
@@ -640,5 +636,3 @@ export async function resolvePointsPaymentView(args: {
     message: null,
   } satisfies PointsPaymentView;
 }
-
-

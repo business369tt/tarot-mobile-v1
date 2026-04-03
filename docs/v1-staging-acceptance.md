@@ -25,7 +25,7 @@ Run this document top to bottom on staging before launch. Use staging env values
 - [ ] Reduce available points below `READING_COST_POINTS`.
 - [ ] Reopen `/reading` and confirm the reading pauses in a clean points-required state.
 - [ ] Open the restore CTA and land on `/points` with reading intent.
-- [ ] Complete a successful Stripe Checkout.
+- [ ] Complete a successful ECPay payment.
 - [ ] Confirm automatic return to `/reading`.
 - [ ] Confirm the reading completes without replaying ritual, draw, or reveal.
 
@@ -35,13 +35,13 @@ Run this document top to bottom on staging before launch. Use staging env values
 - [ ] Submit a follow-up on `/reading`.
 - [ ] Confirm the thread pauses in a clean points-required state.
 - [ ] Open the restore CTA and land on `/points` with follow-up intent.
-- [ ] Complete a successful Stripe Checkout.
+- [ ] Complete a successful ECPay payment.
 - [ ] Confirm automatic return to `/reading?resume=followup`.
 - [ ] Confirm the same follow-up continues and settles without retyping the prompt.
 
-## 5. Stripe Failure Paths
+## 5. ECPay Failure Paths
 
-- [ ] Start Checkout and cancel it.
+- [ ] Start ECPay and cancel it.
 - [ ] Confirm `/points` shows a clean canceled state with retry copy.
 - [ ] Reopen an existing order from the same profile and confirm status recovery still works.
 
@@ -63,7 +63,7 @@ Run this document top to bottom on staging before launch. Use staging env values
 - [ ] Open a bad URL and confirm the branded 404 page renders.
 - [ ] Force one render error in staging and confirm the branded route error fallback renders with retry.
 - [ ] Remove LINE env values in a staging-like env and confirm the LINE entry page disables sign-in cleanly.
-- [ ] Remove Stripe env values in a staging-like env and confirm `/points` does not try to open broken Checkout.
+- [ ] Remove ECPay env values in a staging-like env and confirm `/points` does not try to open a broken payment flow.
 - [ ] Remove MiniMax env values in a staging-like env and confirm `/reading` and follow-up show productized unavailable states.
 
 ## 9. Final Verification

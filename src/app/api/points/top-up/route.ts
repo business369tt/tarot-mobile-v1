@@ -5,7 +5,7 @@ import {
   getPointsReturnTo,
   type MaybePointsIntent,
 } from "@/lib/points";
-import { isStripeConfigured } from "@/lib/stripe";
+import { isEcpayConfigured } from "@/lib/ecpay";
 import { createTopUpCheckoutOrder } from "@/lib/top-up-orders";
 import { hasConfiguredPublicAppUrl } from "@/lib/app-env";
 
@@ -42,11 +42,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isStripeConfigured()) {
+  if (!isEcpayConfigured()) {
     return NextResponse.json(
       {
         message:
-          "Payments are unavailable on this environment. Add the Stripe key first, then reopen this restore step.",
+          "Payments are unavailable on this environment. Add the ECPay settings first, then reopen this restore step.",
       },
       { status: 503 },
     );
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "Set AUTH_URL or NEXT_PUBLIC_APP_URL before opening Stripe Checkout from this environment.",
+          "Set AUTH_URL or NEXT_PUBLIC_APP_URL before opening ECPay from this environment.",
       },
       { status: 503 },
     );
@@ -109,8 +109,8 @@ export async function POST(request: Request) {
         {
           message:
             error.message === "APP_BASE_URL_HTTPS_REQUIRED"
-              ? "Stripe Checkout needs an HTTPS AUTH_URL or NEXT_PUBLIC_APP_URL in production."
-              : "Stripe Checkout needs AUTH_URL or NEXT_PUBLIC_APP_URL before it can open.",
+              ? "ECPay needs an HTTPS AUTH_URL or NEXT_PUBLIC_APP_URL in production."
+              : "ECPay needs AUTH_URL or NEXT_PUBLIC_APP_URL before it can open.",
         },
         { status: 503 },
       );
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "The payment link did not open this time. Try the same restore step once more.",
+          "The payment link did not open this time. Try the same top-up step once more.",
       },
       { status: 502 },
     );
