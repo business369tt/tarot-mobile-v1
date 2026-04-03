@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getAppBaseUrl } from "@/lib/app-env";
 import {
   buildPointsPaymentRedirectPath,
   getEcpayCheckoutLaunchForViewer,
@@ -52,24 +53,31 @@ async function getViewerId() {
 }
 
 export async function GET(request: Request) {
+  const appBaseUrl = getAppBaseUrl();
   const viewerId = await getViewerId();
 
   if (!viewerId) {
-    return NextResponse.redirect(new URL("/auth/line", request.url), 303);
+    return NextResponse.redirect(new URL("/auth/line", appBaseUrl), 303);
   }
 
   const url = new URL(request.url);
   const orderId = url.searchParams.get("order");
 
   if (!orderId) {
-    return NextResponse.redirect(new URL("/points?payment=failed", request.url), 303);
+    return NextResponse.redirect(
+      new URL("/points?payment=failed", appBaseUrl),
+      303,
+    );
   }
 
   const launch = await getEcpayCheckoutLaunchForViewer(orderId, viewerId);
 
   if (!launch) {
     return NextResponse.redirect(
-      new URL(`/points?payment=failed&order=${encodeURIComponent(orderId)}`, request.url),
+      new URL(
+        `/points?payment=failed&order=${encodeURIComponent(orderId)}`,
+        appBaseUrl,
+      ),
       303,
     );
   }
@@ -83,7 +91,7 @@ export async function GET(request: Request) {
           : "failed";
     const redirectPath = buildPointsPaymentRedirectPath(launch.order, payment);
 
-    return NextResponse.redirect(new URL(redirectPath, request.url), 303);
+    return NextResponse.redirect(new URL(redirectPath, appBaseUrl), 303);
   }
 
   const html = buildCheckoutDocument(launch.action, launch.fields);

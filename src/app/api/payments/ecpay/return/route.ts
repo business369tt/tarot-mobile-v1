@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAppBaseUrl } from "@/lib/app-env";
 import { verifyEcpayCheckMacValue } from "@/lib/ecpay";
 import {
   buildPointsPaymentRedirectPath,
@@ -22,10 +23,11 @@ function formDataToPayload(formData: FormData) {
 function resolveFallbackRedirect(request: Request, payment: "cancel" | "failed") {
   const url = new URL(request.url);
   const orderId = url.searchParams.get("order");
+  const appBaseUrl = getAppBaseUrl();
 
   return new URL(
     buildPointsPaymentRedirectPath(null, payment, orderId),
-    request.url,
+    appBaseUrl,
   );
 }
 
@@ -49,9 +51,10 @@ export async function POST(request: Request) {
         : order?.status === "canceled"
           ? "cancel"
           : "failed";
+    const appBaseUrl = getAppBaseUrl();
     const redirectUrl = new URL(
       buildPointsPaymentRedirectPath(order, payment),
-      request.url,
+      appBaseUrl,
     );
 
     return NextResponse.redirect(redirectUrl, 303);
