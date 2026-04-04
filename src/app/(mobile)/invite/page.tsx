@@ -12,12 +12,12 @@ export default async function InvitePage() {
       <InviteStateCard
         eyebrow="邀請"
         eyebrowEn="Invite"
-        title="先登入再查看邀請"
+        title="先登入再看邀請"
         titleEn="Sign in to view invites"
-        body="邀請碼與獎勵都會綁定在同一個 LINE 身份下。"
-        bodyEn="Invite rewards stay attached to the same LINE profile."
+        body="邀請碼與獎勵都會綁定在同一個登入身份下。"
+        bodyEn="Invite rewards stay attached to the same signed-in profile."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 登入"
+        primaryLabel="前往登入"
         secondaryHref="/"
         secondaryLabel="回到首頁"
       />
@@ -33,14 +33,14 @@ export default async function InvitePage() {
       <InviteStateCard
         eyebrow="邀請"
         eyebrowEn="Invite"
-        title="邀請頁暫時打不開"
+        title="邀請目前暫時不可用"
         titleEn="Invite is unavailable right now"
-        body="稍後再試一次，或先回到點數頁。"
+        body="稍後再試，或先回到點數頁。"
         bodyEn="Try again in a moment, or return to points for now."
         primaryHref="/invite"
         primaryLabel="重新整理"
         secondaryHref="/points"
-        secondaryLabel="查看點數"
+        secondaryLabel="前往點數"
       />
     );
   }

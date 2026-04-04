@@ -25,15 +25,26 @@ function getInviteMessage(
   }
 
   if (inviteClaim.status === "rewarded") {
-    return t("邀請獎勵已入帳。", "Invite reward added.");
+    return inviteClaim.inviterName
+      ? t(
+          `邀請已綁定，獎勵已回到 ${inviteClaim.inviterName} 的餘額。`,
+          `Invite linked. The reward was added to ${inviteClaim.inviterName}'s balance.`,
+        )
+      : t(
+          "邀請已綁定，獎勵已回到分享者的餘額。",
+          "Invite linked. The reward was added to the sharer's balance.",
+        );
   }
 
   if (inviteClaim.status === "already_rewarded") {
-    return t("這筆邀請獎勵已經入帳。", "This invite reward was already claimed.");
+    return t(
+      "這筆邀請獎勵已經處理完成。",
+      "This invite reward was already claimed.",
+    );
   }
 
   if (inviteClaim.status === "already_attached") {
-    return t("這個邀請已經綁定過。", "This invite is already attached.");
+    return t("這個邀請已經綁定到其他帳號。", "This invite is already attached.");
   }
 
   if (inviteClaim.status === "self") {
@@ -44,7 +55,7 @@ function getInviteMessage(
     return t("這個邀請碼目前無法使用。", "This invite code is unavailable.");
   }
 
-  return t("邀請狀態暫時無法確認。", "Invite status is unavailable right now.");
+  return t("邀請狀態目前無法確認。", "Invite status is unavailable right now.");
 }
 
 export function LineEntryScreen(props: {

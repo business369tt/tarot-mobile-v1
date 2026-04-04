@@ -42,12 +42,12 @@ export default async function PointsPage({
       <PointsStateCard
         eyebrow="點數"
         eyebrowEn="Points"
-        title="先登入再查看點數"
+        title="先登入再看點數"
         titleEn="Sign in to view points"
-        body="點數與付款紀錄都會綁定在同一個 LINE 身份下。"
-        bodyEn="Points and payment history stay attached to the same LINE profile."
+        body="點數與付款紀錄都會綁定在同一個登入身份下。"
+        bodyEn="Points and payment history stay attached to the same signed-in profile."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 登入"
+        primaryLabel="前往登入"
         secondaryHref="/"
         secondaryLabel="回到首頁"
       />
@@ -80,9 +80,9 @@ export default async function PointsPage({
       <PointsStateCard
         eyebrow="點數"
         eyebrowEn="Points"
-        title="點數頁暫時打不開"
+        title="點數目前暫時不可用"
         titleEn="Points are unavailable right now"
-        body="稍後再試一次，或先回到原本流程。"
+        body="稍後再試，或先回到你剛剛的流程。"
         bodyEn="Try again in a moment, or return to your previous flow."
         primaryHref={getRetryHref(intent, returnTo)}
         primaryLabel="重新整理"

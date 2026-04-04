@@ -254,6 +254,10 @@ export function PointsScreen(props: PointsScreenProps) {
       payment.surface !== "settling" &&
       (ledger.points >= actionCost || payment.surface === "success"),
   );
+  const flowReturnHref =
+    canReturnToFlow && isFollowupIntent
+      ? appendResumeParam(props.returnTo, "followup")
+      : cancelHref;
   const showDailyCheckIn = !canReturnToFlow;
   const showPackages = !canReturnToFlow;
   const showTransactions = !props.intent || !canReturnToFlow;
@@ -844,7 +848,7 @@ export function PointsScreen(props: PointsScreenProps) {
       <div className="mt-auto grid gap-3">
         {canReturnToFlow ? (
           <Link
-            href={cancelHref}
+            href={flowReturnHref}
             className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92"
           >
             {cancelLabel}
