@@ -180,30 +180,138 @@ function buildFollowupPrompt(args: {
   return { system, user };
 }
 
+function normalizeJsonCandidate(candidate: string) {
+  return candidate
+    .replace(/^\uFEFF/, "")
+    .replace(/,\s*([}\]])/g, "$1")
+    .trim();
+}
+
+function extractBalancedJsonObjects(raw: string) {
+  const candidates: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < raw.length; index += 1) {
+    const char = raw[index];
+
+    if (start < 0) {
+      if (char === "{") {
+        start = index;
+        depth = 1;
+        inString = false;
+        escaped = false;
+      }
+
+      continue;
+    }
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\" && inString) {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      continue;
+    }
+
+    if (char === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (char !== "}") {
+      continue;
+    }
+
+    depth -= 1;
+
+    if (depth === 0) {
+      candidates.push(raw.slice(start, index + 1));
+      start = -1;
+    }
+  }
+
+  return candidates;
+}
+
+function tryParseJsonCandidate(candidate: string) {
+  try {
+    const parsed = JSON.parse(normalizeJsonCandidate(candidate)) as unknown;
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // ignore parse failures and keep trying the next candidate
+  }
+
+  return null;
+}
+
 function extractJsonObject(raw: string) {
   const direct = raw.trim();
+  const candidates: string[] = [];
 
-  try {
-    return JSON.parse(direct) as Record<string, unknown>;
-  } catch {
-    // fall through
+  function pushCandidate(value: string | undefined) {
+    const candidate = value?.trim();
+
+    if (!candidate || candidates.includes(candidate)) {
+      return;
+    }
+
+    candidates.push(candidate);
   }
+
+  pushCandidate(direct);
 
   const fenced =
-    direct.match(/```json\s*([\s\S]*?)```/i) ?? direct.match(/```\s*([\s\S]*?)```/i);
+    direct.match(/```json\s*([\s\S]*?)```/i) ??
+    direct.match(/```\s*([\s\S]*?)```/i);
 
-  if (fenced?.[1]) {
-    return JSON.parse(fenced[1]) as Record<string, unknown>;
+  pushCandidate(fenced?.[1]);
+
+  for (const candidate of extractBalancedJsonObjects(direct)) {
+    pushCandidate(candidate);
   }
 
-  const firstBrace = direct.indexOf("{");
-  const lastBrace = direct.lastIndexOf("}");
+  if (fenced?.[1]) {
+    for (const candidate of extractBalancedJsonObjects(fenced[1])) {
+      pushCandidate(candidate);
+    }
+  }
 
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return JSON.parse(direct.slice(firstBrace, lastBrace + 1)) as Record<string, unknown>;
+  for (const candidate of candidates) {
+    const parsed = tryParseJsonCandidate(candidate);
+
+    if (parsed) {
+      return parsed;
+    }
   }
 
   throw new Error("MiniMax returned a response that could not be parsed as JSON.");
+}
+
+function getReadingPreview(raw: string, maxLength = 280) {
+  const preview = raw.replace(/\s+/g, " ").trim();
+
+  if (preview.length <= maxLength) {
+    return preview;
+  }
+
+  return `${preview.slice(0, maxLength)}...`;
 }
 
 function getTextContent(response: MiniMaxMessageResponse) {
@@ -289,9 +397,20 @@ export async function generateTarotReadingWithMiniMax(args: {
     failureMessage: readingFailureMessage,
     maxTokens: 1400,
   });
+  let parsed: Record<string, unknown> | null = null;
+
+  try {
+    parsed = extractJsonObject(response.text);
+  } catch (error) {
+    console.warn(
+      "MiniMax reading parse failed; falling back to normalized defaults.",
+      error,
+      getReadingPreview(response.text),
+    );
+  }
 
   const structured = normalizeStructuredTarotReading(
-    extractJsonObject(response.text),
+    parsed,
     args.cards,
     args.question,
     args.category,
