@@ -8,8 +8,7 @@ import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
 import {
   defaultQuestion,
-  getCategoryDisplayMeta,
-  tarotCategories,
+  type TarotCategoryId,
 } from "@/lib/mock-tarot-data";
 
 const sparkPrompts = {
@@ -25,6 +24,70 @@ const sparkPrompts = {
   ],
 } as const;
 
+const categoryKeywordMap: Array<{
+  category: TarotCategoryId;
+  keywords: string[];
+}> = [
+  {
+    category: "timing",
+    keywords: ["何時", "什麼時候", "多久", "when", "timing", "wait"],
+  },
+  {
+    category: "decision",
+    keywords: ["要不要", "該不該", "選擇", "決定", "choice", "decide", "should i"],
+  },
+  {
+    category: "career",
+    keywords: [
+      "工作",
+      "事業",
+      "職場",
+      "面試",
+      "升遷",
+      "創業",
+      "賺錢",
+      "career",
+      "job",
+      "work",
+      "business",
+      "money",
+    ],
+  },
+  {
+    category: "love",
+    keywords: [
+      "感情",
+      "愛情",
+      "戀愛",
+      "關係",
+      "曖昧",
+      "對象",
+      "分手",
+      "復合",
+      "marriage",
+      "relationship",
+      "love",
+      "partner",
+    ],
+  },
+];
+
+function inferCategoryId(question: string): TarotCategoryId {
+  const normalized = question.trim().toLowerCase();
+
+  if (!normalized) {
+    return "self";
+  }
+
+  for (const entry of categoryKeywordMap) {
+    if (entry.keywords.some((keyword) => normalized.includes(keyword))) {
+      return entry.category;
+    }
+  }
+
+  return "self";
+}
+
 export function QuestionScreen() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +97,6 @@ export function QuestionScreen() {
     session,
     ownsCurrentSession,
     question,
-    categoryId,
     saveToHistory,
     setQuestion,
     setCategoryId,
@@ -43,9 +105,13 @@ export function QuestionScreen() {
     startNewReading,
   } = useTarotFlow();
   const previewQuestion = useDeferredValue(question.trim() || defaultQuestion);
-  const selectedCategory = getCategoryDisplayMeta(categoryId);
   const canContinue = question.trim().length > 0;
   const prompts = sparkPrompts[locale];
+
+  function applyQuestion(nextQuestion: string) {
+    setQuestion(nextQuestion);
+    setCategoryId(inferCategoryId(nextQuestion));
+  }
 
   if (!isAuthHydrated) {
     return (
@@ -173,7 +239,7 @@ export function QuestionScreen() {
           value={question}
           maxLength={180}
           placeholder={t("例如：我現在該不該換工作？", "For example: Should I change jobs right now?")}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) => applyQuestion(event.target.value)}
           className="h-36 w-full resize-none rounded-[1.4rem] border border-white/10 bg-black/20 px-4 py-4 text-[0.95rem] leading-7 text-card-foreground outline-none transition placeholder:text-muted/70 focus:border-line-strong"
         />
 
@@ -182,52 +248,12 @@ export function QuestionScreen() {
             <button
               key={prompt}
               type="button"
-              onClick={() => setQuestion(prompt)}
+              onClick={() => applyQuestion(prompt)}
               className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-xs text-foreground/66 transition hover:border-line-strong hover:text-card-foreground"
             >
               {prompt}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t("主題", "Category")}
-          </h2>
-          <p className="text-sm leading-6 text-foreground/56">
-            {locale === "zh-TW"
-              ? selectedCategory.descriptionZh
-              : selectedCategory.descriptionEn}
-          </p>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {tarotCategories.map((category) => {
-            const display = getCategoryDisplayMeta(category.id);
-            const isActive = category.id === categoryId;
-
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => setCategoryId(category.id)}
-                className={`rounded-[1.3rem] border px-4 py-4 text-left transition ${
-                  isActive
-                    ? "border-line-strong bg-brand-soft"
-                    : "border-white/10 bg-black/18 hover:border-white/16 hover:bg-white/[0.04]"
-                }`}
-              >
-                <p className="text-sm font-semibold text-card-foreground">
-                  {locale === "zh-TW" ? display.labelZh : display.labelEn}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-foreground/56">
-                  {locale === "zh-TW" ? display.descriptionZh : display.descriptionEn}
-                </p>
-              </button>
-            );
-          })}
         </div>
       </div>
 
