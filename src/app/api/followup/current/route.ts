@@ -13,6 +13,7 @@ import {
   generateTarotFollowupWithMiniMax,
   getMiniMaxReadingModel,
 } from "@/lib/minimax-reading";
+import { logAiEvent } from "@/lib/ai-monitoring";
 import {
   buildFollowupPointsHref,
   followupCostPoints,
@@ -456,6 +457,16 @@ export async function POST(request: Request) {
   });
 
   try {
+    const startedAt = Date.now();
+    logAiEvent("followup.generate.start", {
+      sessionId: readiness.session.sessionId,
+      readingRecordId: readingRecord.id,
+      followupRecordId: pendingRecord.id,
+      category: readiness.session.category,
+      promptLength: normalizedPrompt.length,
+      force,
+    });
+
     const generated = await generateTarotFollowupWithMiniMax({
       question: readiness.session.question,
       category: readiness.session.category,
@@ -507,6 +518,19 @@ export async function POST(request: Request) {
     });
     const followups = await resolveFollowupRecords(readingRecord.id, viewerId);
 
+    logAiEvent("followup.generate.success", {
+      sessionId: readiness.session.sessionId,
+      readingRecordId: readingRecord.id,
+      followupRecordId: readyRecord.id,
+      model: generated.model,
+      durationMs: Date.now() - startedAt,
+      usedRepair: generated.meta.usedRepair,
+      rawLength: generated.meta.rawLength,
+      repairedLength: generated.meta.repairedLength,
+      qualityScore: generated.meta.qualityScore,
+      qualityIssueCodes: generated.meta.qualityIssueCodes,
+    });
+
     return NextResponse.json({
       currentFollowup:
         followups.find((item: FollowupResponseRecord) => item.id === readyRecord.id) ??
@@ -515,6 +539,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("MiniMax followup generation failed", error);
+    logAiEvent(
+      "followup.generate.failure",
+      {
+        sessionId: readiness.session.sessionId,
+        readingRecordId: readingRecord.id,
+        followupRecordId: pendingRecord.id,
+        category: readiness.session.category,
+        error: error instanceof Error ? error.message : "unknown_error",
+      },
+      "error",
+    );
 
     const failedRecord = await prisma.followupRecord.update({
       where: { id: pendingRecord.id },

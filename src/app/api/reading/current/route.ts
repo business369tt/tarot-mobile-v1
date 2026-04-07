@@ -5,6 +5,7 @@ import {
   generateTarotReadingWithMiniMax,
   getMiniMaxReadingModel,
 } from "@/lib/minimax-reading";
+import { logAiEvent } from "@/lib/ai-monitoring";
 import { prisma } from "@/lib/prisma";
 import { buildReadingPointsHref, readingCostPoints } from "@/lib/points";
 import { ensureReadingCharge, getViewerPoints } from "@/lib/points-ledger";
@@ -257,6 +258,16 @@ export async function POST(request: Request) {
   });
 
   try {
+    const startedAt = Date.now();
+    logAiEvent("reading.generate.start", {
+      sessionId: readiness.session.sessionId,
+      readingRecordId: pendingRecord.id,
+      category: readiness.session.category,
+      questionLength: readiness.session.question.trim().length,
+      cardIds: readiness.session.selectedCards.map((card) => card.id),
+      force,
+    });
+
     const generated = await generateTarotReadingWithMiniMax({
       question: readiness.session.question,
       category: readiness.session.category,
@@ -296,11 +307,34 @@ export async function POST(request: Request) {
       },
     });
 
+    logAiEvent("reading.generate.success", {
+      sessionId: readiness.session.sessionId,
+      readingRecordId: readyRecord.id,
+      model: generated.model,
+      durationMs: Date.now() - startedAt,
+      usedRepair: generated.meta.usedRepair,
+      usedFallback: generated.meta.usedFallback,
+      rawLength: generated.meta.rawLength,
+      repairedLength: generated.meta.repairedLength,
+      qualityScore: generated.meta.qualityScore,
+      qualityIssueCodes: generated.meta.qualityIssueCodes,
+    });
+
     return NextResponse.json({
       reading: mapRecordToReadingRecord(readyRecord),
     });
   } catch (error) {
     console.error("MiniMax reading generation failed", error);
+    logAiEvent(
+      "reading.generate.failure",
+      {
+        sessionId: readiness.session.sessionId,
+        readingRecordId: pendingRecord.id,
+        category: readiness.session.category,
+        error: error instanceof Error ? error.message : "unknown_error",
+      },
+      "error",
+    );
 
     const failedRecord = await prisma.readingRecord.update({
       where: { id: pendingRecord.id },
