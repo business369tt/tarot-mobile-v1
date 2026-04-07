@@ -1,5 +1,5 @@
 export type AuthStatus = "anonymous" | "authenticated";
-export type AuthProviderName = "line" | null;
+export type AuthProviderName = "line" | "google" | null;
 
 export type ViewerAuthState = {
   authStatus: AuthStatus;
@@ -88,7 +88,12 @@ export function readViewerAuthState() {
     return {
       authStatus: "authenticated",
       isAuthenticated: true,
-      authProvider: viewer.authProvider === "line" ? "line" : "line",
+      authProvider:
+        viewer.authProvider === "google"
+          ? "google"
+          : viewer.authProvider === "line"
+            ? "line"
+            : null,
       viewerId: typeof viewer.viewerId === "string" ? viewer.viewerId : createViewerId(),
       displayName:
         typeof viewer.displayName === "string" && viewer.displayName

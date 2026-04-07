@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { TarotFlowProvider } from "@/components/flow/tarot-flow-provider";
 import { MobileShell } from "@/components/shell/mobile-shell";
-import { isLineAuthConfigured } from "@/lib/auth-env";
+import { isGoogleAuthConfigured, isLineAuthConfigured } from "@/lib/auth-env";
 
 export default async function MobileLayout({
   children,
@@ -12,9 +12,14 @@ export default async function MobileLayout({
 }>) {
   const session = await auth();
   const lineConfigured = isLineAuthConfigured();
+  const googleConfigured = isGoogleAuthConfigured();
 
   return (
-    <AuthProvider session={session} lineConfigured={lineConfigured}>
+    <AuthProvider
+      session={session}
+      lineConfigured={lineConfigured}
+      googleConfigured={googleConfigured}
+    >
       <TarotFlowProvider>
         <MobileShell>{children}</MobileShell>
       </TarotFlowProvider>

@@ -66,25 +66,38 @@ export function LineEntryScreen(props: {
   const {
     isHydrated,
     isAuthenticated,
+    authProvider,
     displayName,
     lineConfigured,
+    googleConfigured,
     beginLineSignIn,
-    signOutFromLine,
+    beginGoogleSignIn,
+    signOutViewer,
   } = useAuth();
   const { session, ownsCurrentSession, getResumeRoute, startNewReading } =
     useTarotFlow();
   const { t } = useLocale();
   const hasCurrentReading = Boolean(session && ownsCurrentSession);
   const inviteMessage = getInviteMessage(props.inviteClaim ?? null, t);
+  const callbackUrl = props.inviteCode
+    ? buildInviteCallback(props.inviteCode)
+    : hasCurrentReading
+      ? getResumeRoute()
+      : "/question";
+  const hasAnyProvider = lineConfigured || googleConfigured;
+  const providerLabel =
+    authProvider === "google"
+      ? t("Google", "Google")
+      : authProvider === "line"
+        ? t("LINE", "LINE")
+        : t("帳號", "account");
 
   async function handleLineSignIn() {
-    await beginLineSignIn(
-      props.inviteCode
-        ? buildInviteCallback(props.inviteCode)
-        : hasCurrentReading
-          ? getResumeRoute()
-          : "/question",
-    );
+    await beginLineSignIn(callbackUrl);
+  }
+
+  async function handleGoogleSignIn() {
+    await beginGoogleSignIn(callbackUrl);
   }
 
   function handleStartFresh() {
@@ -115,19 +128,24 @@ export function LineEntryScreen(props: {
       <div className="space-y-6 pt-6">
         <div className="space-y-3">
           <p className="text-sm text-foreground/56">
-            {t("LINE 登入", "LINE sign in")}
+            {t("登入", "Sign in")}
           </p>
           <h1 className="max-w-[13rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
             {isAuthenticated
-              ? t("已完成登入", "You're signed in")
+              ? t("你已登入", "You're signed in")
               : t("先登入再開始", "Sign in first")}
           </h1>
           <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
             {isAuthenticated
-              ? displayName ?? t("你的身份已連接。", "Your profile is connected.")
+              ? displayName
+                ? t(
+                    `${displayName} 已連接到這個解讀流程。`,
+                    `${displayName} is connected to this reading flow.`,
+                  )
+                : t("你的帳號已連接。", "Your account is connected.")
               : t(
-                  "登入後就能開始抽牌，並保存紀錄與點數。",
-                  "Sign in to begin, save history, and keep your points.",
+                  "登入後即可開始、保存紀錄，並保留你的點數與邀請進度。",
+                  "Sign in to begin, save history, and keep your points and invite progress.",
                 )}
           </p>
         </div>
@@ -146,8 +164,8 @@ export function LineEntryScreen(props: {
             className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-center text-base font-semibold text-black transition hover:opacity-92"
           >
             {hasCurrentReading
-              ? t("繼續上次進度", "Continue")
-              : t("開始抽牌", "Start")}
+              ? t("回到上次流程", "Continue")
+              : t("開始", "Start")}
           </Link>
 
           <button
@@ -161,36 +179,55 @@ export function LineEntryScreen(props: {
           <button
             type="button"
             onClick={() => {
-              void signOutFromLine();
+              void signOutViewer();
             }}
             className="text-sm text-foreground/56 transition hover:text-foreground"
           >
-            {t("改用其他 LINE 帳號", "Use another LINE account")}
+            {t(
+              `改用其他${providerLabel}帳號`,
+              `Use another ${providerLabel}`,
+            )}
           </button>
         </div>
       ) : (
         <div className="grid gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              void handleLineSignIn();
-            }}
-            disabled={!lineConfigured}
-            className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-base font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {t("使用 LINE 登入", "Continue with LINE")}
-          </button>
+          {lineConfigured ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleLineSignIn();
+              }}
+              className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-base font-semibold text-black transition hover:opacity-92"
+            >
+              {t("使用 LINE 登入", "Continue with LINE")}
+            </button>
+          ) : null}
+
+          {googleConfigured ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleGoogleSignIn();
+              }}
+              className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
+            >
+              {t("使用 Google 登入", "Continue with Google")}
+            </button>
+          ) : null}
 
           <Link
             href="/"
-            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
+            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-black/18 px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
           >
             {t("回到首頁", "Back to home")}
           </Link>
 
-          {!lineConfigured ? (
+          {!hasAnyProvider ? (
             <p className="text-sm leading-6 text-foreground/50">
-              {t("LINE 登入目前尚未完成設定。", "LINE sign-in is not configured yet.")}
+              {t(
+                "目前尚未完成任何登入方式設定。",
+                "No sign-in provider is configured yet.",
+              )}
             </p>
           ) : null}
         </div>

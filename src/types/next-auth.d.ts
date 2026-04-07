@@ -4,7 +4,7 @@ declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
       id: string;
-      authProvider: "line";
+      authProvider: "line" | "google" | null;
     };
   }
 }
