@@ -11,6 +11,7 @@ import {
   defaultQuestionDisplay,
   getCardRoleDisplayMeta,
 } from "@/lib/mock-tarot-data";
+import { defaultOfficialTarotSpread } from "@/lib/tarot-spreads";
 
 export function DrawScreen() {
   const router = useRouter();
@@ -26,13 +27,18 @@ export function DrawScreen() {
   } = useTarotFlow();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [isDeckReady, setIsDeckReady] = useState(false);
+  const requiredCards = cardRoles.length;
   const progress = selectedCards.length;
-  const isComplete = progress === 3;
+  const isComplete = progress === requiredCards;
   const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
   const nextRole = cardRoles[progress] ?? null;
   const nextRoleDisplay = nextRole
     ? getCardRoleDisplayMeta(nextRole.role)
     : null;
+  const spreadName =
+    locale === "zh-TW"
+      ? defaultOfficialTarotSpread.nameZh
+      : defaultOfficialTarotSpread.nameEn;
 
   useEffect(() => {
     let frameId = 0;
@@ -76,17 +82,19 @@ export function DrawScreen() {
         <p className="text-sm text-foreground/56">
           {t("抽牌儀式", "Draw ritual")}
         </p>
-        <h1 className="max-w-[13rem] text-[2.55rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {t("憑直覺抽三張牌", "Draw the three cards that call you")}
+        <h1 className="max-w-[14rem] text-[2.55rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          {locale === "zh-TW"
+            ? `依直覺完成「${spreadName}」`
+            : `Complete "${spreadName}" by intuition`}
         </h1>
         <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
           {isComplete
             ? t(
-                "三張牌已經就位，準備展開牌陣。",
+                "牌陣已經就位，接下來可以直接翻牌。",
                 "Your spread is ready to reveal.",
               )
             : t(
-                "先選最先呼喚你的那一張。",
+                "不用想太久，先選最先把你拉住的那張牌。",
                 "Choose the first card that pulls you in.",
               )}
         </p>
@@ -94,7 +102,7 @@ export function DrawScreen() {
 
       <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/44">
-          {t("此刻的問題", "Your question")}
+          {t("你的提問", "Your question")}
         </p>
         <p className="mt-3 text-sm leading-7 text-card-foreground">
           &ldquo;{focusQuestion}&rdquo;
@@ -103,15 +111,17 @@ export function DrawScreen() {
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="text-sm text-foreground/60">
             {isComplete
-              ? t("三張牌已選定", "Three cards chosen")
+              ? locale === "zh-TW"
+                ? `${requiredCards} 張牌已選定`
+                : `${requiredCards} cards chosen`
               : nextRoleDisplay
                 ? locale === "zh-TW"
-                  ? `現在抽：${nextRoleDisplay.labelZh}`
+                  ? `現在要抽的是：${nextRoleDisplay.labelZh}`
                   : `Now drawing: ${nextRoleDisplay.labelEn}`
-                : t("依直覺完成三張牌", "Complete the spread")}
+                : t("完成整個牌陣", "Complete the spread")}
           </p>
           <span className="text-sm font-medium text-foreground/72">
-            {progress}/3
+            {progress}/{requiredCards}
           </span>
         </div>
 
@@ -197,8 +207,8 @@ export function DrawScreen() {
 
         <p className="relative text-center text-sm text-foreground/52">
           {isComplete
-            ? t("牌陣已定，下一步展開它。", "The spread is set. Reveal it next.")
-            : t("跟著第一眼的直覺，不必想太久。", "Trust the first feeling.")}
+            ? t("牌陣已經定下來了，下一步就是翻牌。", "The spread is set. Reveal it next.")
+            : t("相信第一個拉住你的感覺。", "Trust the first feeling.")}
         </p>
       </div>
 
@@ -208,19 +218,19 @@ export function DrawScreen() {
             <h2 className="text-lg font-semibold text-card-foreground">
               {isComplete
                 ? t("牌陣已就位", "Spread ready")
-                : t("已選牌位", "Selected cards")}
+                : t("已選牌卡", "Selected cards")}
             </h2>
             <p className="mt-2 text-sm leading-6 text-foreground/56">
               {isComplete
                 ? t(
-                    "三張牌已選定，下一步翻開它們。",
-                    "All three cards are in place. Reveal them next.",
+                    "所有牌位都已補齊，接下來把它們翻開就好。",
+                    "All cards are in place. Reveal them next.",
                   )
                 : nextRoleDisplay
                   ? locale === "zh-TW"
-                    ? `下一張會落在「${nextRoleDisplay.labelZh}」`
+                    ? `下一張牌會成為「${nextRoleDisplay.labelZh}」`
                     : `The next card will become "${nextRoleDisplay.labelEn}".`
-                  : t("依直覺完成三張牌。", "Complete the spread.")}
+                  : t("把整個牌陣補齊。", "Complete the spread.")}
             </p>
           </div>
 
@@ -230,7 +240,7 @@ export function DrawScreen() {
               onClick={resetSelection}
               className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-medium text-foreground/60 transition hover:border-line-strong hover:text-card-foreground"
             >
-              {t("重新選牌", "Reset")}
+              {t("重選", "Reset")}
             </button>
           ) : null}
         </div>
@@ -257,7 +267,7 @@ export function DrawScreen() {
                   </p>
                   <p className="mt-3 text-[11px] leading-5 text-foreground/46">
                     {isPending
-                      ? t("等待這張牌落下", "Waiting for this card")
+                      ? t("等待這張牌", "Waiting for this card")
                       : t("尚未選定", "Not chosen yet")}
                   </p>
                 </div>
@@ -272,7 +282,7 @@ export function DrawScreen() {
                   onClick={() => removeSelectedCard(card.id)}
                   className="w-full rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-foreground/60 transition hover:border-line-strong hover:text-card-foreground"
                 >
-                  {t("換一張", "Change")}
+                  {t("換牌", "Change")}
                 </button>
               </div>
             );
@@ -288,14 +298,17 @@ export function DrawScreen() {
           className="min-h-[3.9rem] rounded-[1.6rem] bg-white px-5 py-4 text-base font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isComplete
-            ? t("翻開三張牌", "Reveal the spread")
+            ? t("翻開牌陣", "Reveal the spread")
             : locale === "zh-TW"
-              ? `再選 ${3 - progress} 張牌`
-              : `Choose ${3 - progress} more`}
+              ? `再選 ${requiredCards - progress} 張牌`
+              : `Choose ${requiredCards - progress} more`}
         </button>
         {!isComplete ? (
           <p className="text-center text-sm leading-6 text-foreground/52">
-            {t("三張牌選完後，就會進入翻牌與解讀。", "Reveal and reading come next.")}
+            {t(
+              "把牌位補齊後，就會進入翻牌與解讀。",
+              "Reveal and reading come next.",
+            )}
           </p>
         ) : null}
       </div>

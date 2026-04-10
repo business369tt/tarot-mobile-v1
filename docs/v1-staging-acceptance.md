@@ -50,7 +50,9 @@ Run this document top to bottom on staging before launch. Use staging env values
 - [ ] Create a reading with history enabled and confirm it appears in `/history`.
 - [ ] Open the history detail page and confirm reading sections and follow-ups render correctly.
 - [ ] Open `/invite`, copy or share the invite link, and confirm the page does not mention incomplete browser support as a product gap.
-- [ ] Complete one invite-claim flow through `/auth/line?ref=...` and confirm reward settlement appears in both `/invite` and `/points`.
+- [ ] Complete one invite-claim flow through `/auth/line?ref=...` with a second LINE account.
+- [ ] Confirm the invited account sees a clean attached / success state without falsely implying its own `/points` received the invite reward.
+- [ ] Switch back to the inviter account and confirm the reward settlement appears in the inviter-side `/invite` and `/points`.
 
 ## 7. Daily Check-In
 

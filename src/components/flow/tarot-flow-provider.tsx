@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   buildSelectedCard,
+  cardRoles,
   getCategoryMeta,
   type SelectedTarotCard,
   type TarotCard,
@@ -294,7 +295,7 @@ export function TarotFlowProvider({
               };
             }
 
-            if (current.selectedCards.length >= 3) {
+            if (current.selectedCards.length >= cardRoles.length) {
               return current;
             }
 

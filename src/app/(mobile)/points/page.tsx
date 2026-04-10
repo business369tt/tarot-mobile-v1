@@ -42,14 +42,14 @@ export default async function PointsPage({
       <PointsStateCard
         eyebrow="點數"
         eyebrowEn="Points"
-        title="先登入再看點數"
+        title="登入後才能查看點數與補點狀態"
         titleEn="Sign in to view points"
-        body="點數與付款紀錄都會綁定在同一個登入身份下。"
+        body="你的點數、補點紀錄與付款狀態，會跟著同一個登入身分一起保留。"
         bodyEn="Points and payment history stay attached to the same signed-in profile."
         primaryHref="/auth/line"
-        primaryLabel="前往登入"
+        primaryLabel="登入查看點數"
         secondaryHref="/"
-        secondaryLabel="回到首頁"
+        secondaryLabel="返回首頁"
       />
     );
   }
@@ -66,8 +66,7 @@ export default async function PointsPage({
     paymentView = {
       surface: "failed" as const,
       order: null,
-      message:
-        "The payment return could not be reopened cleanly. You can still come back to the balance and try again.",
+      message: "付款回傳狀態暫時無法重新打開，你仍然可以回到點數頁後再試一次。",
     };
   }
 
@@ -80,14 +79,14 @@ export default async function PointsPage({
       <PointsStateCard
         eyebrow="點數"
         eyebrowEn="Points"
-        title="點數目前暫時不可用"
+        title="點數資料暫時無法讀取"
         titleEn="Points are unavailable right now"
-        body="稍後再試，或先回到你剛剛的流程。"
+        body="請稍後再試一次，或先回到剛才的流程，之後再回來補點。"
         bodyEn="Try again in a moment, or return to your previous flow."
         primaryHref={getRetryHref(intent, returnTo)}
         primaryLabel="重新整理"
         secondaryHref={intent ? returnTo : "/question"}
-        secondaryLabel={intent ? "回到原流程" : "開始抽牌"}
+        secondaryLabel={intent ? "回到剛才流程" : "開始新的提問"}
       />
     );
   }

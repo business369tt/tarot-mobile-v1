@@ -97,6 +97,12 @@ type AiQualityResult = {
   issueCodes: AiQualityIssueCode[];
 };
 
+const structuredReadingRepairWarningCodes = new Set<AiQualityIssueCode>([
+  "template_tone",
+  "question_detached",
+  "guidance_not_actionable",
+]);
+
 const explicitAiPattern =
   /作為AI|身為AI|我是AI|人工智慧|語言模型|large language model/i;
 const templatePhrasePattern =
@@ -133,6 +139,406 @@ export function getMiniMaxReadingModel() {
   return minimaxModel;
 }
 
+function normalizeAnswerTextV2(value: string) {
+  return normalizeTraditionalChinese(stripMarkdownFences(value))
+    .replace(/联/g, "聯")
+    .replace(/请/g, "請")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function normalizeComparisonTextV2(value: string) {
+  return normalizeAnswerTextV2(value)
+    .replace(/[\s,，。！？；：「」『』（）()、\-—…]/g, "")
+    .toLowerCase();
+}
+
+function extractFirstSentenceV2(value: string) {
+  const [firstSentence = ""] = normalizeAnswerTextV2(value).split(/[。！？\n]/);
+
+  return firstSentence.trim();
+}
+
+function extractQuestionSignalsV2(question: string) {
+  const normalized = normalizeTraditionalChinese(question)
+    .replace(/[^\u3400-\u9fffA-Za-z0-9]+/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const signals = new Set<string>();
+  const chunks = normalized.split(/\s+/).filter(Boolean);
+
+  for (const chunk of chunks) {
+    if (/^[A-Za-z0-9]+$/.test(chunk)) {
+      if (chunk.length >= 2) {
+        signals.add(chunk.toLowerCase());
+      }
+
+      continue;
+    }
+
+    for (let size = Math.min(4, chunk.length); size >= 2; size -= 1) {
+      for (let start = 0; start <= chunk.length - size; start += 1) {
+        const token = chunk.slice(start, start + size);
+
+        if (zhTwQuestionStopSignals.has(token)) {
+          continue;
+        }
+
+        signals.add(token);
+      }
+    }
+  }
+
+  return [...signals].slice(0, 120);
+}
+
+function containsQuestionSignalV2(value: string, question: string) {
+  const normalized = normalizeAnswerTextV2(value);
+  const signals = extractQuestionSignalsV2(question);
+
+  if (signals.length === 0) {
+    return true;
+  }
+
+  if (signals.some((signal) => signal.length >= 2 && normalized.includes(signal))) {
+    return true;
+  }
+
+  const normalizedQuestion = normalizeTraditionalChinese(question).replace(/\s+/g, "");
+  const firstSentence = extractFirstSentenceV2(normalized);
+
+  if (
+    /(?:應不應該|該不該|要不要|會不會|能不能|適不適合|還是)/.test(
+      normalizedQuestion,
+    ) &&
+    /(?:建議|不建議|適合|不適合|可以|不可以|應該|先緩一緩|先等一等|先等等|先不要|先觀望|接受|觀望|推進|等待|暫緩|有幫助|沒幫助)/.test(
+      firstSentence,
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function isNaturalTraditionalChineseTextV2(value: string) {
+  const normalized = normalizeAnswerTextV2(value);
+
+  if (!normalized || normalized.length < 6) {
+    return false;
+  }
+
+  if (markdownFencePattern.test(normalized) || hasBlockedAiPhrase(normalized)) {
+    return false;
+  }
+
+  if (/^\s*[\[{]/.test(normalized)) {
+    return false;
+  }
+
+  const cjkCount = countCjkCharacters(normalized);
+  const minCjkCount = normalized.length >= 24 ? 12 : 4;
+
+  if (cjkCount < minCjkCount) {
+    return false;
+  }
+
+  const latinCount = (normalized.match(/[A-Za-z]/g) ?? []).length;
+
+  if (latinCount > cjkCount * 0.35) {
+    return false;
+  }
+
+  const residualSimplifiedCount =
+    normalized.match(/[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听联请于经资决潜变试带绪类语质单纯当钟础稳压缩态]/g)?.length ??
+    0;
+
+  return residualSimplifiedCount <= 6;
+}
+
+function isActionableGuidanceV2(value: string) {
+  const normalized = normalizeAnswerTextV2(value);
+
+  return (
+    zhTwActionableLeadPattern.test(normalized) ||
+    /(?:先|寫下|列出|整理|釐清|確認|不要|停止|直接|安排|給自己|回去|保留|收斂|觀察|準備)/.test(
+      normalized,
+    )
+  );
+}
+
+function mergeStructuredReadingCandidate(
+  candidate: Partial<StructuredTarotReading> | null,
+  fallbackBase: StructuredTarotReading,
+) {
+  if (!candidate) {
+    return null;
+  }
+
+  const guidance = Array.isArray(candidate.concreteGuidance)
+    ? candidate.concreteGuidance
+        .map((item) => normalizeAnswerTextV2(String(item ?? "")))
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+
+  function preferField(
+    value: string | undefined,
+    fallbackValue: string,
+    minLength: number,
+  ) {
+    const normalized = normalizeAnswerTextV2(String(value ?? ""));
+
+    return normalized.length >= minLength ? normalized : fallbackValue;
+  }
+
+  return {
+    ...candidate,
+    reportTitle: preferField(candidate.reportTitle, fallbackBase.reportTitle, 4),
+    reportSubtitle: preferField(
+      candidate.reportSubtitle,
+      fallbackBase.reportSubtitle,
+      18,
+    ),
+    questionCore: preferField(candidate.questionCore, fallbackBase.questionCore, 28),
+    constellationLine: preferField(
+      candidate.constellationLine,
+      fallbackBase.constellationLine,
+      18,
+    ),
+    spreadAxis: preferField(candidate.spreadAxis, fallbackBase.spreadAxis, 24),
+    cardReadings: {
+      threshold: preferField(
+        candidate.cardReadings?.threshold,
+        fallbackBase.cardReadings.threshold,
+        24,
+      ),
+      mirror: preferField(
+        candidate.cardReadings?.mirror,
+        fallbackBase.cardReadings.mirror,
+        24,
+      ),
+      horizon: preferField(
+        candidate.cardReadings?.horizon,
+        fallbackBase.cardReadings.horizon,
+        24,
+      ),
+    },
+    progression: preferField(candidate.progression, fallbackBase.progression, 24),
+    nearTermTrend: preferField(
+      candidate.nearTermTrend,
+      fallbackBase.nearTermTrend,
+      18,
+    ),
+    concreteGuidance:
+      guidance.length === 3
+        ? ([guidance[0], guidance[1], guidance[2]] as [string, string, string])
+        : fallbackBase.concreteGuidance,
+    closingReminder: preferField(
+      candidate.closingReminder,
+      fallbackBase.closingReminder,
+      16,
+    ),
+  } satisfies Partial<StructuredTarotReading>;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+const zhTwBlockedAiPattern =
+  /(?:作為|身為|我是|我是一個)?\s*(?:AI|人工智慧|語言模型)|language model/i;
+const zhTwResidualSimplifiedPattern =
+  /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听]/;
+const zhTwTemplatePattern =
+  /(?:這件事的關鍵不在表面結果|這副直答三張牌不是要你一次看完整個未來|先用現況核心抓住現在真正的重心|再正面處理隱藏阻力指出的卡點|最後把答案收斂到最佳走向)/;
+const zhTwWeakLeadPattern =
+  /^(?:也許|可能|某種程度上|整體來說|大致上|看起來|可以先理解成)/;
+const zhTwVaguePattern =
+  /(?:某種程度|某個部分|也許|似乎|看起來|有可能|一些情況|慢慢來|之後再看看)/g;
+const zhTwActionableLeadPattern =
+  /^(?:先|先把|正視|依照|把|列出|寫下|釐清|確認|停止|暫停|直接|回去|保留|收斂|安排|觀察|記下|刪掉|補上|設定|只做|今天先|這週先|先別|不要|試著|開始)/;
+const zhTwQuestionStopSignals = new Set([
+  "我",
+  "你",
+  "他",
+  "她",
+  "它",
+  "現在",
+  "最近",
+  "這件事",
+  "這個人",
+  "這個月",
+  "如果",
+  "真的",
+  "主動",
+  "應該",
+  "不應該",
+  "要不要",
+  "還是",
+  "最",
+  "什麼",
+  "怎麼",
+  "哪一種",
+  "一個月",
+  "一件",
+  "哪裡",
+  "先",
+  "再",
+  "會",
+  "有",
+  "嗎",
+]);
+const simplifiedPhraseReplacements = [
+  ["这个月", "這個月"],
+  ["这件事", "這件事"],
+  ["这个人", "這個人"],
+  ["这个", "這個"],
+  ["合作邀请", "合作邀請"],
+  ["重新联络", "重新聯絡"],
+  ["资源清单", "資源清單"],
+  ["资源", "資源"],
+  ["清单", "清單"],
+  ["等于", "等於"],
+  ["回应", "回應"],
+  ["这种", "這種"],
+  ["内在", "內在"],
+  ["时机", "時機"],
+  ["强行", "強行"],
+  ["状态", "狀態"],
+  ["过度", "過度"],
+  ["处理", "處理"],
+  ["后果", "後果"],
+  ["压力", "壓力"],
+  ["讯号", "訊號"],
+  ["第一句话", "第一句話"],
+  ["第一句", "第一句"],
+  ["什么信号", "什麼訊號"],
+  ["风声", "風聲"],
+] as const;
+const simplifiedCharMap: Record<string, string> = {
+  这: "這",
+  个: "個",
+  们: "們",
+  为: "為",
+  说: "說",
+  会: "會",
+  开: "開",
+  关: "關",
+  时: "時",
+  后: "後",
+  来: "來",
+  过: "過",
+  还: "還",
+  让: "讓",
+  从: "從",
+  种: "種",
+  应: "應",
+  动: "動",
+  点: "點",
+  实: "實",
+  里: "裡",
+  问: "問",
+  吗: "嗎",
+  样: "樣",
+  观: "觀",
+  风: "風",
+  审: "審",
+  担: "擔",
+  复: "複",
+  并: "並",
+  产: "產",
+  气: "氣",
+  两: "兩",
+  给: "給",
+  对: "對",
+  没: "沒",
+  机: "機",
+  线: "線",
+  话: "話",
+  觉: "覺",
+  处: "處",
+  体: "體",
+  办: "辦",
+  触: "觸",
+  号: "號",
+  与: "與",
+  达: "達",
+  进: "進",
+  边: "邊",
+  迟: "遲",
+  远: "遠",
+  门: "門",
+  广: "廣",
+  华: "華",
+  听: "聽",
+  于: "於",
+  经: "經",
+  资: "資",
+  决: "決",
+  潜: "潛",
+  变: "變",
+  试: "試",
+  带: "帶",
+  绪: "緒",
+  类: "類",
+  语: "語",
+  质: "質",
+  单: "單",
+  纯: "純",
+  当: "當",
+  钟: "鐘",
+  础: "礎",
+  稳: "穩",
+  压: "壓",
+  缩: "縮",
+  态: "態",
+};
+
+void [
+  blockedAiPhrases,
+  commonSimplifiedPattern,
+  explicitAiPattern,
+  templatePhrasePattern,
+  weakLeadPattern,
+  vaguePhrasePattern,
+  actionableLeadPattern,
+  questionStopSignals,
+  normalizeComparisonText,
+  extractFirstSentence,
+  extractQuestionSignals,
+  containsQuestionSignal,
+  isNaturalTraditionalChineseText,
+];
+
+function normalizeTraditionalChinese(value: string) {
+  let normalized = value;
+
+  for (const [source, target] of simplifiedPhraseReplacements) {
+    normalized = normalized.replaceAll(source, target);
+  }
+
+  return normalized.replace(
+    /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听于经资决潜变试带绪类语质单纯当钟础稳压缩态]/g,
+    (character) => simplifiedCharMap[character] ?? character,
+  );
+}
+
+function hasBlockedAiPhrase(value: string) {
+  return zhTwBlockedAiPattern.test(value);
+}
+
+function hasQualityErrors(result: AiQualityResult) {
+  return result.issues.some((issue) => issue.severity === "error");
+}
+
 function countCjkCharacters(value: string) {
   return (value.match(/[\u3400-\u4dbf\u4e00-\u9fff]/g) ?? []).length;
 }
@@ -145,10 +551,7 @@ function stripMarkdownFences(value: string) {
 }
 
 function normalizeAnswerText(value: string) {
-  return stripMarkdownFences(value)
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return normalizeAnswerTextV2(value);
 }
 
 function normalizeComparisonText(value: string) {
@@ -175,13 +578,30 @@ function uniqueIssueCodes(issues: AiQualityIssue[]) {
 }
 
 function buildQualityResult(issues: AiQualityIssue[]) {
+  const uniqueIssues = [...issues].reduce((map, issue) => {
+    const existing = map.get(issue.code);
+
+    if (
+      !existing ||
+      (issue.severity === "error" && existing.severity !== "error")
+    ) {
+      map.set(issue.code, issue);
+    }
+
+    return map;
+  }, new Map<AiQualityIssueCode, AiQualityIssue>());
   const score = Math.max(
     0,
     100 -
-      issues.reduce((total, issue) => total + (issue.severity === "error" ? 16 : 8), 0),
+      [...uniqueIssues.values()].reduce(
+        (total, issue) => total + (issue.severity === "error" ? 16 : 5),
+        0,
+      ),
   );
-  const issueCodes = uniqueIssueCodes(issues);
-  const passed = !issues.some((issue) => issue.severity === "error") && score >= 84;
+  const issueCodes = uniqueIssueCodes([...uniqueIssues.values()]);
+  const passed =
+    ![...uniqueIssues.values()].some((issue) => issue.severity === "error") &&
+    score >= 84;
 
   return {
     passed,
@@ -243,14 +663,14 @@ function extractQuestionSignals(question: string) {
 }
 
 function containsQuestionSignal(value: string, question: string) {
-  const normalized = normalizeAnswerText(value);
-  const signals = extractQuestionSignals(question);
+  const normalized = normalizeAnswerTextV2(value);
+  const signals = extractQuestionSignalsV2(question);
 
   if (signals.length === 0) {
     return true;
   }
 
-  return signals.some((signal) => normalized.includes(signal));
+  return signals.some((signal) => signal.length >= 2 && normalized.includes(signal));
 }
 
 function getCardReadingFieldKey(role: string) {
@@ -266,7 +686,7 @@ function getCardReadingFieldKey(role: string) {
 }
 
 function sectionMentionsCardAnchor(value: string, card: SelectedTarotCard) {
-  const normalized = normalizeAnswerText(value);
+  const normalized = normalizeAnswerTextV2(value);
   const displayMeta = getCardDisplayMeta(card.id);
   const roleMeta = getCardRoleDisplayMeta(card.role);
   const orientationMeta = getOrientationDisplayMeta(card.orientation);
@@ -287,7 +707,7 @@ function evaluateTextQuality(args: {
   question?: string;
   checkDirectLead?: boolean;
 }) {
-  const normalized = normalizeAnswerText(String(args.text ?? ""));
+  const normalized = normalizeAnswerTextV2(String(args.text ?? ""));
   const issues: AiQualityIssue[] = [];
 
   if (normalized.length < args.minLength) {
@@ -323,7 +743,7 @@ function evaluateTextQuality(args: {
     );
   }
 
-  if (blockedAiPhrases.test(normalized) || explicitAiPattern.test(normalized)) {
+  if (hasBlockedAiPhrase(normalized) || explicitAiPattern.test(normalized)) {
     issues.push(
       createQualityIssue(
         "mentions_ai",
@@ -334,18 +754,18 @@ function evaluateTextQuality(args: {
     );
   }
 
-  if (!isNaturalTraditionalChineseText(normalized)) {
+  if (!isNaturalTraditionalChineseTextV2(normalized)) {
     issues.push(
       createQualityIssue(
         "not_traditional_chinese",
         args.field,
-        "error",
+        "warning",
         `${args.field} 不是自然的繁體中文。`,
       ),
     );
   }
 
-  if (templatePhrasePattern.test(normalized)) {
+  if (zhTwTemplatePattern.test(normalized)) {
     issues.push(
       createQualityIssue(
         "template_tone",
@@ -356,7 +776,7 @@ function evaluateTextQuality(args: {
     );
   }
 
-  const vagueCount = countPatternMatches(normalized, vaguePhrasePattern);
+  const vagueCount = countPatternMatches(normalized, zhTwVaguePattern);
 
   if (vagueCount > (args.maxVagueCount ?? 2)) {
     issues.push(
@@ -372,7 +792,7 @@ function evaluateTextQuality(args: {
   if (
     args.requireQuestionSignal &&
     args.question &&
-    !containsQuestionSignal(normalized, args.question)
+    !containsQuestionSignalV2(normalized, args.question)
   ) {
     issues.push(
       createQualityIssue(
@@ -385,9 +805,9 @@ function evaluateTextQuality(args: {
   }
 
   if (args.checkDirectLead) {
-    const firstSentence = extractFirstSentence(normalized);
+    const firstSentence = extractFirstSentenceV2(normalized);
 
-    if (!firstSentence || weakLeadPattern.test(firstSentence)) {
+    if (!firstSentence || zhTwWeakLeadPattern.test(firstSentence)) {
       issues.push(
         createQualityIssue(
           "directness_weak",
@@ -455,8 +875,6 @@ function evaluateStructuredReadingQuality(args: {
       text: args.value.spreadAxis,
       minLength: 24,
       maxVagueCount: 1,
-      requireQuestionSignal: true,
-      question: args.question,
     }),
     ...evaluateTextQuality({
       field: "progression",
@@ -534,7 +952,7 @@ function evaluateStructuredReadingQuality(args: {
   }
 
   const actionableCount = guidance.filter((item) =>
-    actionableLeadPattern.test(normalizeAnswerText(item)),
+    isActionableGuidanceV2(item),
   ).length;
 
   if (guidance.length > 0 && actionableCount < Math.min(2, guidance.length)) {
@@ -549,10 +967,10 @@ function evaluateStructuredReadingQuality(args: {
   }
 
   const normalizedSections = cardSections
-    .map((section) => normalizeComparisonText(String(section.value ?? "")))
+    .map((section) => normalizeComparisonTextV2(String(section.value ?? "")))
     .filter(Boolean);
   const normalizedGuidance = guidance
-    .map((item) => normalizeComparisonText(String(item ?? "")))
+    .map((item) => normalizeComparisonTextV2(String(item ?? "")))
     .filter(Boolean);
 
   if (
@@ -644,7 +1062,28 @@ function buildQualityRepairFocus(issueCodes: AiQualityIssueCode[]) {
   return ["前一版沒有通過的品質規則：", ...descriptions].join("\n");
 }
 
+function getDirectAnswerRoleDisplays(cards: SelectedTarotCard[]) {
+  return {
+    threshold: getCardRoleDisplayMeta(cards[0]?.role ?? "Threshold"),
+    mirror: getCardRoleDisplayMeta(cards[1]?.role ?? "Mirror"),
+    horizon: getCardRoleDisplayMeta(cards[2]?.role ?? "Horizon"),
+  };
+}
+
+function buildDirectAnswerSpreadGuardrails(cards: SelectedTarotCard[]) {
+  const roles = getDirectAnswerRoleDisplays(cards);
+
+  return [
+    "本次官方牌陣是「直答三張牌」。",
+    "這不是過去／現在／未來牌陣，不能寫成時間線。",
+    `threshold = ${roles.threshold.labelZh}：${roles.threshold.subtitleZh}。`,
+    `mirror = ${roles.mirror.labelZh}：${roles.mirror.subtitleZh}。`,
+    `horizon = ${roles.horizon.labelZh}：${roles.horizon.subtitleZh}。`,
+  ].join("\n");
+}
+
 function buildReadingQualityChecklist(cards: SelectedTarotCard[]) {
+  const roles = getDirectAnswerRoleDisplays(cards);
   const perCardRules = cards.map((card) => {
     const displayMeta = getCardDisplayMeta(card.id);
     const roleMeta = getCardRoleDisplayMeta(card.role);
@@ -657,6 +1096,8 @@ function buildReadingQualityChecklist(cards: SelectedTarotCard[]) {
     "你必須同時滿足以下品質規則：",
     "- 全文只能使用自然、流暢的繁體中文。",
     "- 語氣要像成熟的塔羅師，不像 AI 助手、客服或文章模板。",
+    "- 這是「直答三張牌」，不可把三張牌誤寫成過去／現在／未來。",
+    `- 三個牌位必須分別對應 ${roles.threshold.labelZh}、${roles.mirror.labelZh}、${roles.horizon.labelZh}。`,
     "- questionCore 的第一句就要直接回答使用者最在意的核心問題。",
     "- 不要使用『整體來看』『首先』『其次』『最後』『希望這能幫助你』這種模板開場。",
     "- concreteGuidance 必須剛好有三條，而且每條都要是可執行動作。",
@@ -666,6 +1107,7 @@ function buildReadingQualityChecklist(cards: SelectedTarotCard[]) {
 }
 
 function buildFollowupQualityChecklist(cards: SelectedTarotCard[]) {
+  const roles = getDirectAnswerRoleDisplays(cards);
   const cardRule = cards
     .map((card) => {
       const displayMeta = getCardDisplayMeta(card.id);
@@ -679,6 +1121,8 @@ function buildFollowupQualityChecklist(cards: SelectedTarotCard[]) {
   return [
     "你必須同時滿足以下品質規則：",
     "- 全文只能使用自然的繁體中文。",
+    "- 這一局仍然是「直答三張牌」，不要改寫成過去／現在／未來。",
+    `- 回答時要延續 ${roles.threshold.labelZh}、${roles.mirror.labelZh}、${roles.horizon.labelZh} 這三個牌位邏輯。`,
     "- 第一段第一句就直接回答這則追問。",
     "- 回答中必須明確連回至少一張牌的牌名、牌位或正逆位。",
     `- 這一局可用的牌面錨點是：${cardRule}。`,
@@ -688,13 +1132,13 @@ function buildFollowupQualityChecklist(cards: SelectedTarotCard[]) {
 }
 
 function isNaturalTraditionalChineseText(value: string) {
-  const normalized = normalizeAnswerText(value);
+  const normalized = normalizeAnswerTextV2(value);
 
   if (!normalized || normalized.length < 12) {
     return false;
   }
 
-  if (markdownFencePattern.test(normalized) || blockedAiPhrases.test(normalized)) {
+  if (markdownFencePattern.test(normalized) || hasBlockedAiPhrase(normalized)) {
     return false;
   }
 
@@ -704,17 +1148,17 @@ function isNaturalTraditionalChineseText(value: string) {
 
   const cjkCount = countCjkCharacters(normalized);
 
-  if (cjkCount < 18) {
+  if (cjkCount < 12) {
     return false;
   }
 
   const latinCount = (normalized.match(/[A-Za-z]/g) ?? []).length;
 
-  if (latinCount > cjkCount * 0.25) {
+  if (latinCount > cjkCount * 0.35) {
     return false;
   }
 
-  return !commonSimplifiedPattern.test(normalized);
+  return (normalized.match(zhTwResidualSimplifiedPattern)?.length ?? 0) <= 2;
 }
 
 function collectStructuredReadingFields(value: Partial<StructuredTarotReading>) {
@@ -751,7 +1195,15 @@ function shouldRepairStructuredReading(args: {
     return true;
   }
 
-  return !evaluateStructuredReadingQuality(args).passed;
+  const quality = evaluateStructuredReadingQuality(args);
+
+  if (hasQualityErrors(quality)) {
+    return true;
+  }
+
+  return quality.issueCodes.some((code) =>
+    structuredReadingRepairWarningCodes.has(code),
+  );
 }
 
 function shouldRepairFollowupAnswer(args: {
@@ -775,7 +1227,7 @@ function formatCardForPrompt(card: SelectedTarotCard) {
   return [
     `${roleMeta.labelZh}｜${roleMeta.subtitleZh}`,
     `牌名：${displayMeta.nameZh}`,
-    `牌位：${orientationMeta.zh}`,
+    `正逆位：${orientationMeta.zh}`,
     `牌性主調：${displayMeta.toneZh}`,
     `此位解讀重點：${orientationMeaning}`,
     `關鍵字：${displayMeta.keywordsZh.join("、")}`,
@@ -793,6 +1245,7 @@ function buildReadingPrompt(args: {
 }) {
   const categoryMeta = getCategoryDisplayMeta(args.category);
   const cardsContext = buildCardsContext(args.cards);
+  const spreadGuardrails = buildDirectAnswerSpreadGuardrails(args.cards);
 
   const system = [
     "你是一位成熟、準確、有真人感的塔羅占卜師，只能使用繁體中文作答。",
@@ -807,6 +1260,9 @@ function buildReadingPrompt(args: {
     "請根據以下資訊，輸出一份可直接給使用者閱讀的塔羅解讀。",
     `問題：${args.question.trim()}`,
     `主題：${categoryMeta.labelZh}｜${categoryMeta.descriptionZh}`,
+    "",
+    "牌陣規則：",
+    spreadGuardrails,
     "",
     "三張牌資料：",
     cardsContext,
@@ -837,11 +1293,13 @@ function buildReadingPrompt(args: {
     "1. 所有欄位都必須是自然、完整、流暢的繁體中文。",
     "2. reportTitle 要像這次牌陣的主題標題，不能只是『塔羅解讀』這種空泛詞。",
     "3. reportSubtitle 要用一句話說出這次解讀的核心氣氛。",
+    "3-1. reportSubtitle 最好能帶出現況核心、隱藏阻力、最佳走向這三層結構。",
     "4. questionCore 的第一句就要直接回答使用者最想知道的重點，不能先鋪陳。",
     "4-1. 如果問題屬於『會不會』『能不能』『該不該』這類判斷題，第一句就先給傾向，再補條件與原因。",
-    "5. constellationLine 要寫出三張牌如何彼此牽動，形成什麼整體訊號。",
+    "5. constellationLine 要寫出三張牌如何彼此牽動，形成什麼整體訊號，不能寫成過去、現在、未來。",
     "6. spreadAxis 要說清楚這局牌陣的主軸與真正的矛盾點。",
     "7. cardReadings 三個欄位都必須真的對應各自牌位與正逆位，不可互相重複。",
+    "7-1. threshold 只能回答現況核心，mirror 只能回答隱藏阻力，horizon 只能回答最佳走向。",
     "8. progression 要點出事情現在正往哪裡發展。",
     "9. nearTermTrend 要聚焦未來一到四週，不要模糊拖長。",
     "10. concreteGuidance 必須給三條可執行、可落地的建議，每條都要明確。",
@@ -865,6 +1323,7 @@ function buildReadingRepairPrompt(args: {
 }) {
   const categoryMeta = getCategoryDisplayMeta(args.category);
   const cardsContext = buildCardsContext(args.cards);
+  const spreadGuardrails = buildDirectAnswerSpreadGuardrails(args.cards);
 
   const system = [
     "你是塔羅解讀內容總編輯。",
@@ -876,6 +1335,9 @@ function buildReadingRepairPrompt(args: {
   const user = [
     `問題：${args.question.trim()}`,
     `主題：${categoryMeta.labelZh}｜${categoryMeta.descriptionZh}`,
+    "",
+    "牌陣規則：",
+    spreadGuardrails,
     "",
     "三張牌資料：",
     cardsContext,
@@ -923,6 +1385,7 @@ function buildFollowupPrompt(args: {
 }) {
   const categoryMeta = getCategoryDisplayMeta(args.category);
   const cardsContext = buildCardsContext(args.cards);
+  const spreadGuardrails = buildDirectAnswerSpreadGuardrails(args.cards);
 
   const system = [
     "你是延續同一局解讀的塔羅師，只能使用繁體中文回答。",
@@ -936,6 +1399,9 @@ function buildFollowupPrompt(args: {
   const user = [
     `原始問題：${args.question.trim()}`,
     `主題：${categoryMeta.labelZh}｜${categoryMeta.descriptionZh}`,
+    "",
+    "牌陣規則：",
+    spreadGuardrails,
     "",
     "三張牌資料：",
     cardsContext,
@@ -955,6 +1421,7 @@ function buildFollowupPrompt(args: {
     "1-1. 如果追問本身是在問可不可以、該不該、會不會，第一句就先給清楚傾向。",
     "2. 要讓人讀起來像資深塔羅師在當面說話，而不是 AI 模板。",
     "3. 必須延續這一局牌，不可重開新題。",
+    "3-1. 不可把這一局改寫成過去／現在／未來的時間線。",
     "4. 長度控制在 2 到 4 段，清楚但不要冗長。",
     "5. 如果需要提醒風險，要說出原因與條件，不要只丟模糊警告。",
   ].join("\n");
@@ -976,6 +1443,7 @@ function buildFollowupRepairPrompt(args: {
 }) {
   const categoryMeta = getCategoryDisplayMeta(args.category);
   const cardsContext = buildCardsContext(args.cards);
+  const spreadGuardrails = buildDirectAnswerSpreadGuardrails(args.cards);
 
   const system = [
     "你是塔羅追問回答的文字編修者。",
@@ -988,6 +1456,9 @@ function buildFollowupRepairPrompt(args: {
     `原始問題：${args.question.trim()}`,
     `主題：${categoryMeta.labelZh}｜${categoryMeta.descriptionZh}`,
     `追問：${args.followupPrompt.trim()}`,
+    "",
+    "牌陣規則：",
+    spreadGuardrails,
     "",
     "三張牌資料：",
     cardsContext,
@@ -1232,35 +1703,64 @@ async function requestMiniMaxText(args: RequestMiniMaxTextArgs) {
     throw new Error(args.unavailableMessage);
   }
 
-  const response = await fetch(`${minimaxAnthropicBaseUrl}/v1/messages`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": anthropicVersion,
-    },
-    body: JSON.stringify({
-      model: minimaxModel,
-      max_tokens: args.maxTokens,
-      temperature: args.temperature ?? 0.28,
-      top_p: args.topP ?? 0.88,
-      system: args.system,
-      messages: [
-        {
-          role: "user",
-          content: [
+  let response: Response | null = null;
+  let payload: MiniMaxMessageResponse | null = null;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      response = await fetch(`${minimaxAnthropicBaseUrl}/v1/messages`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": anthropicVersion,
+        },
+        body: JSON.stringify({
+          model: minimaxModel,
+          max_tokens: args.maxTokens,
+          temperature: args.temperature ?? 0.28,
+          top_p: args.topP ?? 0.88,
+          system: args.system,
+          messages: [
             {
-              type: "text",
-              text: args.user,
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: args.user,
+                },
+              ],
             },
           ],
-        },
-      ],
-    }),
-    cache: "no-store",
-  });
+        }),
+        cache: "no-store",
+      });
 
-  const payload = (await response.json().catch(() => null)) as MiniMaxMessageResponse | null;
+      payload = (await response.json().catch(() => null)) as MiniMaxMessageResponse | null;
+
+      if (
+        response.ok ||
+        ![408, 429, 500, 502, 503, 504].includes(response.status) ||
+        attempt === 2
+      ) {
+        break;
+      }
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error : new Error("unknown_fetch_error");
+
+      if (attempt === 2) {
+        throw lastError;
+      }
+    }
+
+    await delay(1200 * (attempt + 1));
+  }
+
+  if (!response) {
+    throw lastError ?? new Error(args.failureMessage);
+  }
 
   if (!response.ok) {
     throw new Error(payload?.error?.message || args.failureMessage);
@@ -1325,7 +1825,7 @@ async function repairFollowupAnswer(args: {
 
   return {
     model: response.model,
-    text: normalizeAnswerText(response.text),
+    text: normalizeAnswerTextV2(response.text),
   };
 }
 
@@ -1344,6 +1844,12 @@ export async function generateTarotReadingWithMiniMax(args: {
     temperature: 0.18,
     topP: 0.82,
   });
+  const fallbackBase = normalizeStructuredTarotReading(
+    null,
+    args.cards,
+    args.question,
+    args.category,
+  );
 
   let parsed: Record<string, unknown> | null = null;
   let usedRepair = false;
@@ -1367,6 +1873,10 @@ export async function generateTarotReadingWithMiniMax(args: {
   }
 
   if (parsed) {
+    parsed = mergeStructuredReadingCandidate(
+      parsed as Partial<StructuredTarotReading>,
+      fallbackBase,
+    ) as Record<string, unknown>;
     qualityResult = evaluateStructuredReadingQuality({
       value: parsed as Partial<StructuredTarotReading>,
       question: args.question,
@@ -1401,6 +1911,8 @@ export async function generateTarotReadingWithMiniMax(args: {
     }
 
     try {
+      const previousParsed = parsed;
+      const previousQuality = qualityResult;
       const repaired = await repairStructuredReading({
         question: args.question,
         category: args.category,
@@ -1409,7 +1921,10 @@ export async function generateTarotReadingWithMiniMax(args: {
         issueCodes: repairIssueCodes,
       });
 
-      parsed = repaired.parsed;
+      parsed = mergeStructuredReadingCandidate(
+        repaired.parsed as Partial<StructuredTarotReading>,
+        fallbackBase,
+      ) as Record<string, unknown>;
       repairedLength = repaired.text.length;
       qualityResult = evaluateStructuredReadingQuality({
         value: parsed as Partial<StructuredTarotReading>,
@@ -1424,7 +1939,16 @@ export async function generateTarotReadingWithMiniMax(args: {
         qualityIssueCodes: qualityResult.issueCodes,
       });
 
-      if (!qualityResult.passed) {
+      if (
+        previousParsed &&
+        previousQuality &&
+        qualityResult.score < previousQuality.score
+      ) {
+        parsed = previousParsed;
+        qualityResult = previousQuality;
+      }
+
+      if (qualityResult && hasQualityErrors(qualityResult)) {
         logAiEvent(
           "reading.parse.fallback_defaults",
           {
@@ -1435,7 +1959,6 @@ export async function generateTarotReadingWithMiniMax(args: {
           },
           "warn",
         );
-        parsed = null;
       }
     } catch (error) {
       logAiEvent(
@@ -1448,7 +1971,6 @@ export async function generateTarotReadingWithMiniMax(args: {
         },
         "warn",
       );
-      parsed = null;
     }
   }
 
@@ -1496,7 +2018,7 @@ export async function generateTarotFollowupWithMiniMax(args: {
     topP: 0.85,
   });
 
-  let answer = normalizeAnswerText(response.text);
+  let answer = normalizeAnswerTextV2(response.text);
   let usedRepair = false;
   let repairedLength: number | null = null;
   let qualityResult = evaluateFollowupAnswerQuality({

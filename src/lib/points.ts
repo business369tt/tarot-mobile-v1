@@ -25,9 +25,24 @@ function normalizeCurrency(value: string | undefined, fallback: string) {
 }
 
 function isZeroDecimalCurrency(currency: string) {
-  return new Set(["bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf"]).has(
-    currency.toLowerCase(),
-  );
+  return new Set([
+    "bif",
+    "clp",
+    "djf",
+    "gnf",
+    "jpy",
+    "kmf",
+    "krw",
+    "mga",
+    "pyg",
+    "rwf",
+    "ugx",
+    "vnd",
+    "vuv",
+    "xaf",
+    "xof",
+    "xpf",
+  ]).has(currency.toLowerCase());
 }
 
 export function formatCurrencyMinor(amountMinor: number, currency: string) {
@@ -64,8 +79,9 @@ export const pointPackages: PointPackage[] = [
   {
     id: "reading-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_PRIMARY, 5),
-    label: "解讀補點 / Reading refill",
-    caption: "足夠完成這份報告，並替下一次回來多留一點空間。",
+    label: "三次解讀補點包",
+    caption:
+      "適合先完成一輪主解讀，再多追問一到兩次，讓同一條問題線先看清楚。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_PRIMARY_AMOUNT_MINOR,
       19000,
@@ -79,8 +95,9 @@ export const pointPackages: PointPackage[] = [
   {
     id: "extended-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_SECONDARY, 12),
-    label: "安靜儲備 / Quiet reserve",
-    caption: "替這次解讀與接下來幾次 session 保留更穩定的點數餘額。",
+    label: "長線陪跑補點包",
+    caption:
+      "給想保留更多餘裕的人，適合連續追問、回看紀錄，讓同一份解讀慢慢展開。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_SECONDARY_AMOUNT_MINOR,
       39000,

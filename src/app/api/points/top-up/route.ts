@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "請先登入，再補點。" },
+      { message: "請先登入後再補點。" },
       { status: 401 },
     );
   }
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
   if (!isEcpayConfigured()) {
     return NextResponse.json(
       {
-        message: "這個環境目前無法開啟補點，請先完成 ECPay 設定後再試一次。",
+        message:
+          "目前補點環境尚未完整設定，ECPay 付款流程暫時無法使用。",
       },
       { status: 503 },
     );
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "請先設定 AUTH_URL 或 NEXT_PUBLIC_APP_URL，才能開啟這次補點。",
+          "目前缺少公開站網址設定，暫時無法啟動補點付款流程。",
       },
       { status: 503 },
     );
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
     if (!checkoutUrl) {
       return NextResponse.json(
         {
-          message: "這筆補點已經建立，請回到同一個點數頁繼續。",
+          message: "這筆補點已經建立，你可以直接回到原本的付款流程。",
           order,
         },
         { status: 409 },
@@ -107,8 +108,8 @@ export async function POST(request: Request) {
         {
           message:
             error.message === "APP_BASE_URL_HTTPS_REQUIRED"
-              ? "正式環境的 ECPay 補點需要 HTTPS 的 AUTH_URL 或 NEXT_PUBLIC_APP_URL。"
-              : "開啟 ECPay 之前，請先設定 AUTH_URL 或 NEXT_PUBLIC_APP_URL。",
+              ? "補點付款流程需要 HTTPS 的公開網址設定。"
+              : "目前缺少公開站網址設定，暫時無法建立補點訂單。",
         },
         { status: 503 },
       );
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message: "這次沒有順利打開付款頁，請再試一次相同的補點步驟。",
+        message: "這次補點沒有成功建立付款流程，請稍後再試一次。",
       },
       { status: 502 },
     );

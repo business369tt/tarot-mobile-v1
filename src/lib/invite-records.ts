@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import { inviteRewardPoints, buildInviteLink } from "@/lib/invite";
+import { buildInviteLink, inviteRewardPoints } from "@/lib/invite";
 import { prisma, type TransactionClient } from "@/lib/prisma";
 
 const inviteDateFormatter = new Intl.DateTimeFormat("zh-TW", {
@@ -43,7 +43,12 @@ export type InviteClaimResult =
       inviteeName: string | null;
     }
   | {
-      status: "already_rewarded" | "already_attached" | "self" | "invalid" | "error";
+      status:
+        | "already_rewarded"
+        | "already_attached"
+        | "self"
+        | "invalid"
+        | "error";
       inviterName?: string | null;
     };
 
@@ -56,6 +61,20 @@ function createInviteCode(length = 8) {
   }
 
   return code;
+}
+
+function getInviteeDisplayName(inviteeName: string | null | undefined) {
+  return inviteeName?.trim() || "一位新讀者";
+}
+
+function buildInviteProgressSummary(inviteeName: string | null | undefined) {
+  const displayName = inviteeName?.trim();
+
+  if (displayName) {
+    return `${displayName} 已經透過你的邀請開始使用，這筆回饋已經結算到你的帳戶。`;
+  }
+
+  return "有一位新讀者透過你的邀請開始使用，這筆回饋已經結算到你的帳戶。";
 }
 
 async function createInviteProfile(userId: string) {
@@ -160,15 +179,12 @@ export async function getViewerInviteSurface(
     rewardPerInvite: inviteRewardPoints,
     recentProgress: recentProgress.map((record: InviteRecentProgressRecord) => ({
       id: record.id,
-      inviteeName: record.inviteeName || "一位新朋友 / A new reader",
+      inviteeName: getInviteeDisplayName(record.inviteeName),
       status: "rewarded",
-      statusLabel: "獎勵已入帳 / Reward settled",
+      statusLabel: "回饋已入帳",
       rewardPoints: record.rewardPoints,
-      rewardLabel: `+${record.rewardPoints} 點 / pts`,
-      summary:
-        record.inviteeName
-          ? `${record.inviteeName} 透過你的連結進入，並讓獎勵順利回到你的餘額裡。`
-          : "有一位新朋友透過你的連結進入，並讓獎勵順利回到你的餘額裡。",
+      rewardLabel: `+${record.rewardPoints} 點`,
+      summary: buildInviteProgressSummary(record.inviteeName),
       createdAt: (record.rewardedAt ?? record.createdAt).toISOString(),
       createdLabel: inviteDateFormatter.format(
         record.rewardedAt ?? record.createdAt,
@@ -280,9 +296,9 @@ export async function claimInviteForViewer(args: {
           kind: "credit",
           source: "invite_reward",
           requestKey,
-        description: invitee.name
-            ? `邀請獎勵：${invitee.name} / Invite reward from ${invitee.name}`
-            : "邀請獎勵 / Invite reward",
+          description: invitee.name
+            ? `邀請回饋：${invitee.name}`
+            : "邀請回饋",
         },
       });
 

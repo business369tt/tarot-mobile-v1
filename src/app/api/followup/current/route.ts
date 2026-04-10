@@ -18,6 +18,7 @@ import {
   buildFollowupPointsHref,
   followupCostPoints,
 } from "@/lib/points";
+import { cardRoles } from "@/lib/mock-tarot-data";
 import {
   ensureFollowupCharge,
   getViewerPoints,
@@ -81,8 +82,8 @@ function sessionCanReadFollowup(
   if (
     session.ownerViewerId !== ownerId ||
     !session.question.trim() ||
-    session.selectedCards.length !== 3 ||
-    session.revealed < 3
+    session.selectedCards.length !== cardRoles.length ||
+    session.revealed < cardRoles.length
   ) {
     return {
       ok: false as const,

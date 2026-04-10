@@ -136,6 +136,34 @@ a {
   }
 }
 
+@keyframes orb-glow {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.96);
+    filter: blur(12px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: blur(18px);
+  }
+}
+
+@keyframes halo-drift {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate3d(-50%, -50%, 0) scale(0.97);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: translate3d(-50%, -50%, 0) scale(1.03);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

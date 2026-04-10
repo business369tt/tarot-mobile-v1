@@ -8,8 +8,12 @@ import { TarotCardFace } from "@/components/flow/tarot-card";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
 import {
+  cardRoles,
   defaultQuestionDisplay,
+  getCardDisplayMeta,
+  getCardRoleDisplayMeta,
   getCategoryDisplayMeta,
+  getOrientationDisplayMeta,
 } from "@/lib/mock-tarot-data";
 import {
   buildReadingSections,
@@ -18,6 +22,7 @@ import {
   type ReadingRecord,
   type ReadingRecordStatus,
 } from "@/lib/reading-record";
+import { defaultOfficialTarotSpread } from "@/lib/tarot-spreads";
 
 type PointsState = {
   available: number;
@@ -85,8 +90,15 @@ export function ReadingScreen() {
   const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
   const categoryDisplay = getCategoryDisplayMeta(sessionCategoryMeta.id);
   const sessionId = session?.sessionId ?? null;
+  const requiredCards = cardRoles.length;
+  const spreadName =
+    locale === "zh-TW"
+      ? defaultOfficialTarotSpread.nameZh
+      : defaultOfficialTarotSpread.nameEn;
   const isSpreadReady = Boolean(
-    session && selectedCards.length === 3 && session.revealed >= 3,
+    session &&
+      selectedCards.length === requiredCards &&
+      session.revealed >= requiredCards,
   );
   const [viewState, setViewState] = useState<ReadingScreenState>({
     sessionId,
@@ -94,6 +106,10 @@ export function ReadingScreen() {
     record: null,
     errorMessage: null,
     pointsState: null,
+  });
+  const [readingDetailState, setReadingDetailState] = useState({
+    sessionId,
+    expanded: false,
   });
   const state =
     viewState.sessionId === sessionId
@@ -106,22 +122,30 @@ export function ReadingScreen() {
           pointsState: null,
         };
   const { status, record, errorMessage, pointsState } = state;
+  const showFullReading =
+    readingDetailState.sessionId === sessionId
+      ? readingDetailState.expanded
+      : false;
   const activeReading = record?.fullReading ?? null;
   const readingSections = record ? buildReadingSections(record) : [];
+  const supportingSections = readingSections.filter((section) => section.id !== "core");
+  const narrativeSections = supportingSections.filter((section) => section.id !== "guidance");
   const statusLabel = getStatusLabel(status, t);
   const modelLine = getReadingModelLine(record, t);
   const heroTitle =
     status === "ready"
       ? activeReading?.reportTitle || t("你的 AI 深度解讀", "Your AI reading")
       : status === "needs_points"
-        ? t("補入點數後，就能展開完整解讀", "Add points to open the full reading")
+        ? t("補入點數後，就能展開完整答案", "Add points to open the full answer")
         : status === "failed"
           ? t("這次解讀沒有完整落下", "This reading did not fully settle")
-          : t("AI 正在整理你的牌陣", "Your AI reading is being prepared");
+          : t("AI 正在整理這次三張牌", "Your AI reading is being prepared");
   const heroSubtitle =
     status === "ready"
       ? activeReading?.reportSubtitle ||
-        t("三張牌與你的提問已整理成一份完整解讀。", "Your cards and question are now one complete reading.")
+        (locale === "zh-TW"
+          ? `「${spreadName}」與你的提問，已整理成一份完整答案。`
+          : `Your ${spreadName} and question are now one complete reading.`)
       : status === "needs_points"
         ? t("補點後會直接回到這裡，繼續完成 AI 深度解讀。", "Add points and return here to continue the AI reading.")
         : status === "failed"
@@ -131,8 +155,60 @@ export function ReadingScreen() {
     status === "ready"
       ? activeReading?.questionCore || activeReading?.progression || null
       : null;
+  const heroSupportLine =
+    status === "ready"
+      ? activeReading?.progression || activeReading?.nearTermTrend || null
+      : null;
+  const visibleDetailSections = showFullReading
+    ? narrativeSections
+    : narrativeSections.slice(0, 4);
+  const hiddenSectionsCount = Math.max(
+    narrativeSections.length - visibleDetailSections.length,
+    0,
+  );
   const categoryLabel =
     locale === "zh-TW" ? categoryDisplay.labelZh : categoryDisplay.labelEn;
+  const guidanceSteps =
+    status === "ready"
+      ? activeReading?.concreteGuidance
+          .map((item) => item.trim())
+          .filter(Boolean) ?? []
+      : [];
+  const cardSpotlights = reportCards.map((card) => {
+    const display = getCardDisplayMeta(card.id);
+    const roleDisplay = getCardRoleDisplayMeta(card.role);
+    const orientationDisplay = getOrientationDisplayMeta(card.orientation);
+
+    return {
+      id: card.id,
+      roleLabel: locale === "zh-TW" ? roleDisplay.labelZh : roleDisplay.labelEn,
+      roleSubtitle:
+        locale === "zh-TW" ? roleDisplay.subtitleZh : roleDisplay.subtitleEn,
+      name: locale === "zh-TW" ? display.nameZh : display.nameEn,
+      orientation:
+        locale === "zh-TW" ? orientationDisplay.zh : orientationDisplay.en,
+      card,
+    };
+  });
+  const summaryPanels =
+    status === "ready"
+      ? [
+          {
+            id: "constellation",
+            eyebrow: t("三張牌怎麼一起說話", "How the cards speak together"),
+            title: t("這副直答三張牌如何把答案扣成一條線", "How this spread locks into one line"),
+            body:
+              activeReading?.constellationLine || activeReading?.spreadAxis || "",
+          },
+          {
+            id: "progression",
+            eyebrow: t("接下來怎麼推進", "What moves next"),
+            title: t("這題未來一到四週最值得關注的變化", "The next one to four weeks"),
+            body:
+              activeReading?.progression || activeReading?.nearTermTrend || "",
+          },
+        ].filter((panel) => panel.body.trim().length > 0)
+      : [];
 
   async function runGenerateReading(
     force = false,
@@ -326,26 +402,32 @@ export function ReadingScreen() {
 
   return (
     <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-3 pt-4">
-        <p className="text-sm text-foreground/56">{t("AI 解讀", "AI reading")}</p>
-        <h1 className="max-w-[13rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {status === "ready"
-            ? t("你的解讀已完成", "Your reading is ready")
-            : status === "needs_points"
-              ? t("還差一步就能查看", "One more step to open it")
-              : status === "failed"
-                ? t("這次解讀沒有完整落下", "This reading did not finish")
-                : t("AI 正在整理你的解讀", "Your AI reading is forming")}
-        </h1>
-        <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
-          {status === "ready"
-            ? t("先看整體訊號，再往下讀完整細節。", "Start with the core signal, then read the full detail.")
-            : heroSubtitle}
-        </p>
+      <div className="space-y-4 pt-3">
+        <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
+          {t("答案已展開", "READING REPORT")}
+        </span>
+        <div className="space-y-3">
+          <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+            {status === "ready"
+              ? t("現在就讀這次答案", "Read this answer now")
+              : status === "needs_points"
+                ? t("還差一步就能打開答案", "One more step to open it")
+                : status === "failed"
+                  ? t("這次解讀沒有完整落下", "This reading did not finish")
+                  : t("AI 正在整理這次答案", "Your AI reading is forming")}
+          </h1>
+          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+            {status === "ready"
+              ? t("先看整體結論，再往下讀每張牌與後續行動。", "Start with the main signal, then read the full detail.")
+              : heroSubtitle}
+          </p>
+        </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] p-5 shadow-[var(--shadow-soft)]">
+      <div className="relative overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] p-5 shadow-[var(--shadow-soft)]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.14),_transparent_34%)]" />
+        <div className="pointer-events-none absolute right-[-8%] top-[-4rem] h-52 w-52 rounded-full border border-[#f0cb97]/10 opacity-60" />
+        <div className="pointer-events-none absolute left-[8%] top-[26%] h-36 w-36 rounded-full border border-white/6 opacity-60" />
 
         <div className="relative">
           <div className="flex items-start justify-between gap-4">
@@ -354,9 +436,12 @@ export function ReadingScreen() {
                 <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
                   {t("AI 深度解讀", "AI Reading")}
                 </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-foreground/56">
+                  {categoryLabel}
+                </span>
                 <span className="text-xs text-foreground/52">{modelLine}</span>
               </div>
-              <h2 className="max-w-[15rem] text-[2rem] font-semibold leading-[1.04] tracking-tight text-card-foreground">
+              <h2 className="max-w-[16rem] text-[2rem] font-semibold leading-[1.04] tracking-tight text-card-foreground">
                 {heroTitle}
               </h2>
             </div>
@@ -370,78 +455,182 @@ export function ReadingScreen() {
             {heroSubtitle}
           </p>
 
-          <div className="mt-5 rounded-[1.55rem] border border-white/8 bg-black/18 p-4">
+          <div className="mt-5 rounded-[1.6rem] border border-[#f0cb97]/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/44">
-              {t("這次提問", "This question")}
+              {status === "ready"
+                ? t("先把答案直接說清楚", "The direct answer")
+                : t("這次提問", "This question")}
             </p>
             <p className="mt-3 text-sm leading-7 text-card-foreground">
-              &ldquo;{focusQuestion}&rdquo;
+              {status === "ready" && heroInsight ? heroInsight : `“${focusQuestion}”`}
             </p>
-            <p className="mt-4 text-sm text-foreground/56">{categoryLabel}</p>
-          </div>
 
-          {heroInsight ? (
-            <div className="mt-5 rounded-[1.55rem] border border-[#f0cb97]/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/44">
-                {t("AI 核心訊號", "Core signal")}
+            {status === "ready" ? (
+              <>
+                <p className="mt-4 text-sm leading-6 text-foreground/52">
+                  &ldquo;{focusQuestion}&rdquo;
+                </p>
+                {heroSupportLine ? (
+                  <p className="mt-3 text-sm leading-7 text-foreground/72">
+                    {heroSupportLine}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-foreground/56">
+                {t(`牌陣：${spreadName}`, `Spread: ${spreadName}`)}
               </p>
-              <p className="mt-3 text-sm leading-7 text-card-foreground">
-                {heroInsight}
-              </p>
-            </div>
-          ) : null}
-
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            {reportCards.map((card) => (
-              <TarotCardFace
-                key={card.id}
-                card={card}
-                variant="compact"
-                showNarrative={false}
-              />
-            ))}
+            )}
           </div>
         </div>
       </div>
 
-      {status === "ready" ? (
-        <div className="grid gap-4">
-          {readingSections.map((section, index) => (
-            <article
-              key={section.id}
-              className={`rounded-[1.75rem] border p-5 ${
-                index === 0
-                  ? "border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))]"
-                  : "border-white/8 bg-white/[0.04]"
-              }`}
-            >
-              <p className="text-sm text-foreground/56">
-                {inlineText(section.eyebrow)}
-              </p>
-              <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
-                {inlineText(section.title)}
-              </h3>
-              <p className="mt-4 text-sm leading-8 text-foreground/76">
-                {section.body}
-              </p>
-            </article>
+      <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-card-foreground">
+            {t("這副直答三張牌正在回答什麼", "What this spread is answering")}
+          </h3>
+          <p className="text-sm leading-6 text-foreground/56">
+            {t(
+              "先看三張牌各自站在哪裡，再往下讀完整敘述與建議。",
+              "See the three positions first, then continue into the full reading.",
+            )}
+          </p>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {cardSpotlights.map((item) => (
+            <div key={item.id} className="space-y-3">
+              <TarotCardFace
+                card={item.card}
+                variant="compact"
+                showNarrative={false}
+              />
+              <div className="rounded-[1.2rem] border border-white/10 bg-black/18 px-3 py-3">
+                <p className="text-xs font-semibold text-card-foreground">
+                  {item.roleLabel}
+                </p>
+                <p className="mt-2 text-[11px] leading-5 text-foreground/56">
+                  {item.name}・{item.orientation}
+                </p>
+                <p className="mt-2 text-[11px] leading-5 text-foreground/42">
+                  {item.roleSubtitle}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
+      </div>
+
+      {status === "ready" ? (
+        <>
+          {summaryPanels.length > 0 ? (
+            <div className="grid gap-4">
+              {summaryPanels.map((panel) => (
+                <section
+                  key={panel.id}
+                  className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5"
+                >
+                  <p className="text-sm text-foreground/56">{panel.eyebrow}</p>
+                  <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
+                    {panel.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-8 text-foreground/76">
+                    {panel.body}
+                  </p>
+                </section>
+              ))}
+            </div>
+          ) : null}
+
+          {guidanceSteps.length > 0 ? (
+            <section className="rounded-[1.85rem] border border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+              <div className="space-y-2">
+                <p className="text-sm text-foreground/56">
+                  {t("關鍵建議", "Key guidance")}
+                </p>
+                <h3 className="text-xl font-semibold leading-8 text-card-foreground">
+                  {t("這次最值得立刻做的三步", "The three actions worth taking now")}
+                </h3>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {guidanceSteps.map((step, index) => (
+                  <div
+                    key={`${index + 1}-${step}`}
+                    className="flex gap-4 rounded-[1.3rem] border border-white/10 bg-black/18 px-4 py-4"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 text-sm font-semibold text-[#f3d4a7]">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm leading-7 text-card-foreground">
+                      {step}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <div className="grid gap-4">
+            {visibleDetailSections.map((section, index) => (
+              <article
+                key={section.id}
+                className={`rounded-[1.8rem] border p-5 ${
+                  index === 0
+                    ? "border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))]"
+                    : "border-white/8 bg-white/[0.04]"
+                }`}
+              >
+                <p className="text-sm text-foreground/56">
+                  {inlineText(section.eyebrow)}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
+                  {inlineText(section.title)}
+                </h3>
+                <p className="mt-4 text-sm leading-8 text-foreground/76">
+                  {section.body}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          {hiddenSectionsCount > 0 ? (
+            <button
+              type="button"
+              onClick={() =>
+                setReadingDetailState((previous) => ({
+                  sessionId,
+                  expanded:
+                    previous.sessionId === sessionId ? !previous.expanded : true,
+                }))
+              }
+              className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+            >
+              {showFullReading
+                ? t("先收起細節", "Hide extra detail")
+                : t(
+                    `展開剩下 ${hiddenSectionsCount} 段完整解讀`,
+                    `Show ${hiddenSectionsCount} more sections`,
+                  )}
+            </button>
+          ) : null}
+        </>
       ) : (
-        <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5">
+        <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5">
           <h3 className="text-lg font-semibold text-card-foreground">
             {status === "needs_points"
-              ? t("補點後繼續完成解讀", "Add points to continue")
+              ? t("補點後繼續讀取答案", "Add points to continue")
               : status === "failed"
                 ? t("再試一次", "Try again")
-                : t("解讀即將完成", "Almost ready")}
+                : t("答案即將完成", "Almost ready")}
           </h3>
           <p className="mt-3 text-sm leading-7 text-foreground/76">
             {status === "needs_points"
               ? inlineText(
                   errorMessage ||
                     t(
-                      `目前有 ${pointsState?.available ?? 0} 點，完成本次解讀需要 ${pointsState?.required ?? 0} 點。`,
+                      `目前有 ${pointsState?.available ?? 0} 點，讀取本次完整答案需要 ${pointsState?.required ?? 0} 點。`,
                       `${pointsState?.available ?? 0} points available and ${pointsState?.required ?? 0} required.`,
                     ),
                 )
@@ -461,9 +650,9 @@ export function ReadingScreen() {
                     pointsState?.topUpHref ??
                     "/points?intent=reading&returnTo=%2Freading"
                   }
-                  className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92"
+                  className="min-h-[3.6rem] rounded-[1.4rem] border border-[#f7d9b2]/55 bg-[linear-gradient(180deg,#f5d49f_0%,#eabf80_46%,#d89e58_100%)] px-4 py-4 text-center text-sm font-semibold text-[#1b1209] shadow-[0_18px_52px_rgba(225,166,92,0.2),inset_0_1px_0_rgba(255,255,255,0.3)] transition hover:-translate-y-px hover:brightness-[1.03]"
                 >
-                  {t("補入點數", "Add points")}
+                  {t("補入點數，繼續讀取", "Add points")}
                 </Link>
                 <Link
                   href="/reveal"
@@ -477,9 +666,9 @@ export function ReadingScreen() {
                 <button
                   type="button"
                   onClick={() => void runGenerateReading(true)}
-                  className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92"
+                  className="min-h-[3.6rem] rounded-[1.4rem] border border-[#f7d9b2]/55 bg-[linear-gradient(180deg,#f5d49f_0%,#eabf80_46%,#d89e58_100%)] px-4 py-4 text-sm font-semibold text-[#1b1209] shadow-[0_18px_52px_rgba(225,166,92,0.2),inset_0_1px_0_rgba(255,255,255,0.3)] transition hover:-translate-y-px hover:brightness-[1.03]"
                 >
-                  {t("重新生成解讀", "Generate again")}
+                  {t("重新整理這次答案", "Generate again")}
                 </button>
                 <Link
                   href="/reveal"
@@ -495,7 +684,7 @@ export function ReadingScreen() {
 
       <ReadingFollowupPanel canOpen={status === "ready" && Boolean(activeReading)} />
 
-      <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5">
+      <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5">
         <h3 className="text-lg font-semibold text-card-foreground">
           {t("接下來", "Next")}
         </h3>

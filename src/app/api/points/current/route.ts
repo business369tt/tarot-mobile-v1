@@ -13,7 +13,7 @@ export async function GET() {
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "請先登入，才能查看點數。" },
+      { message: "請先登入後再查看點數。" },
       { status: 401 },
     );
   }

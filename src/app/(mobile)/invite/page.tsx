@@ -12,19 +12,19 @@ export default async function InvitePage() {
       <InviteStateCard
         eyebrow="邀請"
         eyebrowEn="Invite"
-        title="先登入再看邀請"
+        title="登入後查看邀請回饋"
         titleEn="Sign in to view invites"
-        body="邀請碼與獎勵都會綁定在同一個登入身份下。"
+        body="邀請獎勵會綁定在同一個已登入帳戶上。"
         bodyEn="Invite rewards stay attached to the same signed-in profile."
         primaryHref="/auth/line"
         primaryLabel="前往登入"
         secondaryHref="/"
-        secondaryLabel="回到首頁"
+        secondaryLabel="返回首頁"
       />
     );
   }
 
-  let surface;
+  let surface = null;
 
   try {
     surface = await getViewerInviteSurface(viewerId);
@@ -33,14 +33,14 @@ export default async function InvitePage() {
       <InviteStateCard
         eyebrow="邀請"
         eyebrowEn="Invite"
-        title="邀請目前暫時不可用"
+        title="邀請頁暫時無法使用"
         titleEn="Invite is unavailable right now"
-        body="稍後再試，或先回到點數頁。"
+        body="請稍後再試，或先回到點數頁查看目前餘額。"
         bodyEn="Try again in a moment, or return to points for now."
         primaryHref="/invite"
         primaryLabel="重新整理"
         secondaryHref="/points"
-        secondaryLabel="前往點數"
+        secondaryLabel="查看點數"
       />
     );
   }

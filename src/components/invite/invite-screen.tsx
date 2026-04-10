@@ -18,15 +18,19 @@ export function InviteScreen(props: { surface: InviteSurface }) {
   const { inlineText, t } = useLocale();
   const [feedback, setFeedback] = useState<string | null>(null);
   const latestReward = surface.recentProgress[0] ?? null;
+  const shareMessage = t(
+    `我最近在用這個塔羅解讀服務，體驗很不錯。你可以從這裡開始：${surface.inviteLink}。只要透過我的連結完成登入並開始使用，我就能獲得 ${surface.rewardPerInvite} 點邀請回饋。`,
+    `I've been using this tarot reading app lately. Start here: ${surface.inviteLink}. If you join through my link, I receive ${surface.rewardPerInvite} invite points.`,
+  );
 
   async function handleCopyLink() {
     try {
       await copyText(surface.inviteLink);
-      setFeedback(t("已複製邀請連結。", "Invite link copied."));
+      setFeedback(t("邀請連結已複製。", "Invite link copied."));
     } catch {
       setFeedback(
         t(
-          "這裡暫時不能直接複製，但下方仍然有完整連結與邀請碼。",
+          "這裡暫時無法直接複製，不過下方仍有完整連結與邀請碼可以手動使用。",
           "Copy is unavailable here right now, but the full link and code are still shown below.",
         ),
       );
@@ -36,12 +40,26 @@ export function InviteScreen(props: { surface: InviteSurface }) {
   async function handleCopyCode() {
     try {
       await copyText(surface.code);
-      setFeedback(t("已複製邀請碼。", "Invite code copied."));
+      setFeedback(t("邀請碼已複製。", "Invite code copied."));
     } catch {
       setFeedback(
         t(
-          "這裡暫時不能直接複製，但邀請碼仍然顯示在下方。",
+          "這裡暫時無法直接複製，但下方仍可查看邀請碼。",
           "Copy is unavailable here right now, but the code is still visible below.",
+        ),
+      );
+    }
+  }
+
+  async function handleCopyMessage() {
+    try {
+      await copyText(shareMessage);
+      setFeedback(t("分享文案已複製。", "Share message copied."));
+    } catch {
+      setFeedback(
+        t(
+          "這裡暫時無法直接複製，但下方仍可查看完整分享文案。",
+          "Copy is unavailable here right now, but the share message is still visible below.",
         ),
       );
     }
@@ -55,16 +73,13 @@ export function InviteScreen(props: { surface: InviteSurface }) {
       try {
         await navigator.share({
           title: t("塔羅邀請", "Tarot invite"),
-          text: t(
-            "用這個連結一起開始塔羅解讀。",
-            "Start a tarot reading with this link.",
-          ),
+          text: shareMessage,
           url: surface.inviteLink,
         });
-        setFeedback(t("已打開分享視窗。", "Share sheet opened."));
+        setFeedback(t("分享面板已開啟。", "Share sheet opened."));
         return;
       } catch {
-        setFeedback(t("分享已取消。", "Share canceled."));
+        setFeedback(t("已取消分享。", "Share canceled."));
         return;
       }
     }
@@ -77,85 +92,53 @@ export function InviteScreen(props: { surface: InviteSurface }) {
       <div className="space-y-3 pt-4">
         <p className="text-sm text-foreground/56">{t("邀請", "Invite")}</p>
         <h1 className="max-w-[13rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {t("把這份解讀分享出去", "Share this reading with a friend")}
+          {t("先把連結送出去", "Send this first")}
         </h1>
         <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
           {t(
-            "只要有人從你的連結開始，獎勵就會直接回到你的點數餘額。",
-            "When someone starts through your link, the reward returns to your balance.",
+            `每成功邀請一位新讀者完成開始流程，你就會拿回 ${surface.rewardPerInvite} 點。`,
+            `Each successful invite returns ${surface.rewardPerInvite} points to your balance.`,
           )}
         </p>
       </div>
 
-      <div className="rounded-[1.9rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+      <div className="rounded-[1.9rem] border border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <span className="inline-flex rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
-              {t("邀請獎勵", "Invite reward")}
+              {t("先分享", "Share first")}
             </span>
             <h2 className="max-w-[15rem] text-[1.95rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-              {t(
-                `每成功一位，回來 ${surface.rewardPerInvite} 點`,
-                `${surface.rewardPerInvite} points return for each successful invite`,
-              )}
+              {t("先分享，再回來看成果", "Share before checking stats")}
             </h2>
             <p className="max-w-[18rem] text-sm leading-7 text-foreground/64">
               {latestReward
                 ? t(
-                    `最近一筆獎勵來自 ${inlineText(latestReward.inviteeName)}，邀請出去後，點數會繼續累積在同一個身份下。`,
-                    `Your latest reward came from ${inlineText(latestReward.inviteeName)}. New invite rewards keep settling into the same profile.`,
+                    `你最近一次的邀請回饋來自 ${inlineText(latestReward.inviteeName)}。現在最值得做的下一步，還是再把這份連結送出去。`,
+                    `Your latest reward came from ${inlineText(latestReward.inviteeName)}. For this visit, the best next step is to share again.`,
                   )
                 : t(
-                    "第一次分享出去之後，成功邀請的獎勵也會留在這裡。",
-                    "After your first share, successful invite rewards will settle here too.",
+                    "這一頁最重要的動作不是看數字，而是先把邀請連結傳出去。",
+                    "The most important move here is to send the link and message first.",
                   )}
             </p>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
-            {t(`${surface.availablePoints} 點可用`, `${surface.availablePoints} pts`)}
+          <span className="rounded-full border border-[rgba(229,192,142,0.18)] bg-[rgba(185,144,93,0.12)] px-3 py-1.5 text-xs font-medium text-[#f0cb97]">
+            {t(
+              `${surface.rewardPerInvite} 點 / 每位`,
+              `${surface.rewardPerInvite} pts each`,
+            )}
           </span>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-            <p className="text-sm text-foreground/56">{t("已邀請", "Invited")}</p>
-            <p className="mt-2 text-2xl font-semibold text-card-foreground">
-              {surface.invitedCount}
-            </p>
-          </div>
-          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
-            <p className="text-sm text-foreground/56">{t("已入帳", "Rewards")}</p>
-            <p className="mt-2 text-2xl font-semibold text-card-foreground">
-              {surface.totalRewardPoints} {t("點", "pts")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
-        <div className="space-y-2">
-          <p className="text-sm text-foreground/56">{t("邀請碼", "Invite code")}</p>
-          <h2 className="font-mono text-[1.8rem] font-semibold tracking-[0.18em] text-card-foreground">
-            {surface.code}
-          </h2>
-          <p className="text-sm leading-7 text-foreground/62">
-            {t(
-              "先分享連結。如果需要手動輸入，也可以直接使用這組邀請碼。",
-              "Share the link first. If needed, the invite code can also be entered manually.",
-            )}
+        <div className="mt-5 rounded-[1.4rem] border border-white/10 bg-black/18 p-4">
+          <p className="text-sm text-foreground/56">
+            {t("建議分享文案", "Suggested message")}
+          </p>
+          <p className="mt-3 text-sm leading-7 text-card-foreground">
+            {shareMessage}
           </p>
         </div>
-
-        <p className="mt-4 break-all rounded-[1.25rem] border border-white/10 bg-black/18 px-4 py-3 text-sm leading-7 text-foreground/76">
-          {surface.inviteLink}
-        </p>
-
-        <p className="mt-4 text-sm text-foreground/56">
-          {t(
-            "成功邀請後，獎勵會直接回到你的點數餘額。",
-            "Successful invites return rewards directly to your points balance.",
-          )}
-        </p>
 
         <div className="mt-5 grid gap-3">
           <button
@@ -165,50 +148,123 @@ export function InviteScreen(props: { surface: InviteSurface }) {
             }}
             className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92"
           >
-            {t("分享邀請連結", "Share invite link")}
+            {t("立即分享邀請", "Share invite now")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void handleCopyMessage();
+            }}
+            className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+          >
+            {t("複製分享文案", "Copy share message")}
           </button>
           <button
             type="button"
             onClick={() => {
               void handleCopyLink();
             }}
-            className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
-          >
-            {t("複製連結", "Copy link")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void handleCopyCode();
-            }}
             className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-black/18 px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.05]"
           >
-            {t("複製邀請碼", "Copy code")}
+            {t("複製邀請連結", "Copy invite link")}
           </button>
         </div>
 
         {feedback ? (
           <p className="mt-4 text-sm leading-6 text-brand-strong">{feedback}</p>
         ) : null}
+
+        <div className="mt-5 grid gap-3">
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">
+              {t("邀請連結", "Invite link")}
+            </p>
+            <p className="mt-3 break-all text-sm leading-7 text-card-foreground">
+              {surface.inviteLink}
+            </p>
+          </div>
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-foreground/56">
+                  {t("邀請碼", "Invite code")}
+                </p>
+                <p className="mt-3 font-mono text-[1.5rem] font-semibold tracking-[0.18em] text-card-foreground">
+                  {surface.code}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleCopyCode();
+                }}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+              >
+                {t("複製", "Copy")}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm text-foreground/46">
-              {t("最近獎勵", "Recent rewards")}
+              {t("邀請總覽", "Invite summary")}
+            </p>
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {t(
+                "分享完成後，回饋點數會結算在這裡",
+                "Rewards settle here after sharing",
+              )}
+            </h2>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
+            {t(`${surface.availablePoints} 點`, `${surface.availablePoints} pts`)}
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">
+              {t("已成功邀請", "Invited")}
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-card-foreground">
+              {surface.invitedCount}
+            </p>
+          </div>
+          <div className="rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm text-foreground/56">
+              {t("累計獎勵", "Rewards")}
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-card-foreground">
+              {surface.totalRewardPoints} {t("點", "pts")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[1.8rem] bg-white/[0.04] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-sm text-foreground/46">
+              {t("最近回饋", "Recent rewards")}
             </p>
             <h3 className="text-lg font-semibold text-card-foreground">
               {surface.recentProgress.length > 0
                 ? t(
-                    "最近回到你餘額裡的邀請獎勵",
-                    "Recent invite rewards that settled into your balance",
+                    "最近的邀請回饋已經入帳",
+                    "Recent rewards already settled",
                   )
-                : t("分享出去後，獎勵會留在這裡", "Rewards will appear here after someone joins")}
+                : t(
+                    "只要有人透過你的連結開始使用，回饋就會顯示在這裡",
+                    "Rewards appear here once someone starts through your link",
+                  )}
             </h3>
           </div>
           <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
-            {t(`${surface.availablePoints} 點可用`, `${surface.availablePoints} pts`)}
+            {t(`${surface.availablePoints} 點`, `${surface.availablePoints} pts`)}
           </span>
         </div>
 
@@ -246,8 +302,8 @@ export function InviteScreen(props: { surface: InviteSurface }) {
         ) : (
           <p className="mt-4 text-sm leading-7 text-foreground/62">
             {t(
-              "還沒有邀請獎勵。當有人從你的連結開始後，這裡就會留下記錄。",
-              "No invite rewards yet. Once someone starts through your link, the result will appear here.",
+              "目前還沒有新的邀請回饋。先把上方訊息和連結傳出去，之後再回來查看。",
+              "There are no new invite rewards yet. Send the message and link above first, then come back here later.",
             )}
           </p>
         )}
@@ -258,7 +314,7 @@ export function InviteScreen(props: { surface: InviteSurface }) {
           href="/points"
           className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92"
         >
-          {t("查看點數", "Open points")}
+          {t("查看我的點數", "Open points")}
         </Link>
         <Link
           href="/question"

@@ -117,7 +117,7 @@ function mapTransactionToLedgerEntry(
   record: PointTransactionRecord,
 ): PointsLedgerEntry {
   const direction = record.amount >= 0 ? "credit" : "debit";
-  const amountLabel = `${record.amount >= 0 ? "+" : ""}${record.amount} 點 / pts`;
+  const amountLabel = `${record.amount >= 0 ? "+" : ""}${record.amount} 點`;
   const topUpLabel = record.description
     ?.replace(/^Top-up via\s+/i, "")
     .trim();
@@ -126,22 +126,22 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "reading",
-      typeLabel: "命運解讀 / Destiny reading",
-      typeBadge: "解讀 / Reading",
+      typeLabel: "主解讀扣點",
+      typeBadge: "主解讀",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `這次解讀後剩下 ${record.balanceAfter} 點`,
+      balanceAfterLabel: `扣點後餘額 ${record.balanceAfter} 點`,
       description: record.readingCharge?.question
-        ? `為「${trimLine(record.readingCharge.question, 64)}」打開完整報告。`
-        : "用於開啟一份完整塔羅報告。",
+        ? `這次主解讀對應的問題是「${trimLine(record.readingCharge.question, 64)}」。`
+        : "這筆點數用在一次主解讀。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.readingCharge?.id
         ? `/history/${record.readingCharge.id}`
         : null,
-      detailLabel: record.readingCharge?.id ? "打開解讀（Open reading）" : null,
+      detailLabel: record.readingCharge?.id ? "打開這份解讀" : null,
     };
   }
 
@@ -149,22 +149,24 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "followup",
-      typeLabel: "AI 追問 / AI follow-up",
-      typeBadge: "追問 / Follow-up",
+      typeLabel: "追問扣點",
+      typeBadge: "追問",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `這次追問後剩下 ${record.balanceAfter} 點`,
+      balanceAfterLabel: `扣點後餘額 ${record.balanceAfter} 點`,
       description: record.followupCharge?.prompt
-        ? `以「${trimLine(record.followupCharge.prompt, 64)}」續接這條解讀脈絡。`
-        : "用於續接同一份解讀裡的追問脈絡。",
+        ? `這筆點數用在追問：「${trimLine(record.followupCharge.prompt, 64)}」。`
+        : "這筆點數用在一次追問。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.followupCharge?.readingRecordId
         ? `/history/${record.followupCharge.readingRecordId}`
         : null,
-      detailLabel: record.followupCharge?.readingRecordId ? "打開解讀（Open reading）" : null,
+      detailLabel: record.followupCharge?.readingRecordId
+        ? "回到這份解讀"
+        : null,
     };
   }
 
@@ -172,22 +174,22 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "top_up",
-      typeLabel: "補回點數 / Points restored",
-      typeBadge: "補點 / Top-up",
+      typeLabel: "補入點數",
+      typeBadge: "補點",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
+      balanceAfterLabel: `補點後餘額 ${record.balanceAfter} 點`,
       description: topUpLabel
-        ? `透過 ${topUpLabel} 補回點數。`
-        : "為下一次想打開的解讀補回點數。",
+        ? `透過 ${topUpLabel} 補入點數。`
+        : "你完成了一次補點。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: record.topUpOrder?.id
         ? `/points?payment=success&order=${record.topUpOrder.id}`
         : "/points",
-      detailLabel: "打開點數頁（Open points）",
+      detailLabel: "查看補點狀態",
     };
   }
 
@@ -195,20 +197,20 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "invite_reward",
-      typeLabel: "邀請獎勵 / Invite reward",
-      typeBadge: "邀請 / Invite",
+      typeLabel: "邀請回饋",
+      typeBadge: "邀請",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
+      balanceAfterLabel: `回饋後餘額 ${record.balanceAfter} 點`,
       description: record.inviteReward?.inviteeName
-        ? `${record.inviteReward.inviteeName} 透過你的分享連結進入。`
-        : "有一筆共享邀請已將點數回補到你的餘額中。",
+        ? `${record.inviteReward.inviteeName} 完成加入後，你收到邀請回饋點數。`
+        : "你收到一筆邀請回饋點數。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: "/invite",
-      detailLabel: "打開邀請頁（Open invite）",
+      detailLabel: "查看邀請紀錄",
     };
   }
 
@@ -216,33 +218,33 @@ function mapTransactionToLedgerEntry(
     return {
       id: record.id,
       type: "daily_check_in",
-      typeLabel: "每日回訪 / Daily return",
-      typeBadge: "簽到 / Check-in",
+      typeLabel: "每日簽到",
+      typeBadge: "簽到",
       amount: record.amount,
       amountLabel,
       balanceAfter: record.balanceAfter,
-      balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
+      balanceAfterLabel: `簽到後餘額 ${record.balanceAfter} 點`,
       description: record.dailyCheckIn?.dayKey
-        ? `在 ${record.dailyCheckIn.dayKey} 回來簽到，並領取今天的小額點數。`
-        : "今天已回來簽到，並領取了一筆小額點數。",
+        ? `你在 ${record.dailyCheckIn.dayKey} 完成每日簽到並領取點數。`
+        : "你完成了一次每日簽到。",
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: "/points",
-      detailLabel: "打開點數頁（Open points）",
+      detailLabel: "查看點數頁",
     };
   }
 
   return {
     id: record.id,
     type: "adjustment",
-    typeLabel: "餘額調整 / Balance update",
-    typeBadge: "調整 / Adjustment",
+    typeLabel: "餘額調整",
+    typeBadge: "調整",
     amount: record.amount,
     amountLabel,
     balanceAfter: record.balanceAfter,
-    balanceAfterLabel: `目前可用 ${record.balanceAfter} 點`,
-    description: record.description || "這裡記錄了一筆點數餘額調整。",
+    balanceAfterLabel: `調整後餘額 ${record.balanceAfter} 點`,
+    description: record.description || "這是一筆點數餘額調整。",
     createdAt: record.createdAt.toISOString(),
     createdLabel: pointsDateFormatter.format(record.createdAt),
     direction,

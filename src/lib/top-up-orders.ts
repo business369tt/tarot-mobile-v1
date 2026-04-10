@@ -126,7 +126,7 @@ function getTopUpDescription(order: {
   packageLabel: string;
   provider: string;
 }) {
-  return `Top-up via ${getEcpayProviderLabel(order.provider)} · ${order.packageLabel}`;
+  return `透過 ${getEcpayProviderLabel(order.provider)} 補入點數：${order.packageLabel}`;
 }
 
 function getProviderPaymentIdFromEcpay(payload: Record<string, string>) {
@@ -137,7 +137,7 @@ function getFailureMessageFromEcpay(payload: Record<string, string>) {
   const providerMessage = payload.RtnMsg?.trim();
 
   if (providerMessage) {
-    return `ECPay 付款未完成：${providerMessage}`;
+    return `ECPay 回傳失敗訊息：${providerMessage}`;
   }
 
   return "這次付款沒有完成。";

@@ -59,7 +59,7 @@ export const defaultReadingStatus: ReadingRecordStatus = "idle";
 export const minimaxReadingSource: ReadingSource = "minimax";
 export const readingFailureMessage = "這次解讀沒有完整落下，請再試一次。";
 export const readingUnavailableMessage = "這個環境目前無法使用解讀服務。";
-export const readingNeedsRevealMessage = "三張牌都翻開之後，才能開始解讀。";
+export const readingNeedsRevealMessage = "直答三張牌全部翻開後，才能開始 AI 解讀。";
 
 const supportedCategories = ["love", "career", "self", "decision", "timing"] as const;
 
@@ -124,12 +124,17 @@ const categoryFallbackCopy = {
   }
 >;
 
-function buildFallbackCardMeta(card: SelectedTarotCard | undefined, fallbackName: string) {
+function buildFallbackCardMeta(
+  card: SelectedTarotCard | undefined,
+  fallbackName: string,
+  fallbackRoleLabel: string,
+  fallbackRoleSubtitle: string,
+) {
   if (!card) {
     return {
       nameZh: fallbackName,
-      roleLabel: "牌位",
-      roleSubtitle: "這張牌正在回應你的問題",
+      roleLabel: fallbackRoleLabel,
+      roleSubtitle: fallbackRoleSubtitle,
       orientationZh: "正位",
       meaning: "這張牌在提醒你回到問題核心，不要被情緒或表面現象帶走。",
       keywordsLine: "主線、節奏、選擇",
@@ -230,9 +235,27 @@ export function normalizeStructuredTarotReading(
   const categoryDisplay = getCategoryDisplayMeta(category);
   const categoryCopy = categoryFallbackCopy[category];
   const [threshold, mirror, horizon] = cards;
-  const thresholdMeta = buildFallbackCardMeta(threshold, "第一張牌");
-  const mirrorMeta = buildFallbackCardMeta(mirror, "第二張牌");
-  const horizonMeta = buildFallbackCardMeta(horizon, "第三張牌");
+  const thresholdRole = getCardRoleDisplayMeta(threshold?.role ?? "Threshold");
+  const mirrorRole = getCardRoleDisplayMeta(mirror?.role ?? "Mirror");
+  const horizonRole = getCardRoleDisplayMeta(horizon?.role ?? "Horizon");
+  const thresholdMeta = buildFallbackCardMeta(
+    threshold,
+    "第一張牌",
+    thresholdRole.labelZh,
+    thresholdRole.subtitleZh,
+  );
+  const mirrorMeta = buildFallbackCardMeta(
+    mirror,
+    "第二張牌",
+    mirrorRole.labelZh,
+    mirrorRole.subtitleZh,
+  );
+  const horizonMeta = buildFallbackCardMeta(
+    horizon,
+    "第三張牌",
+    horizonRole.labelZh,
+    horizonRole.subtitleZh,
+  );
   const guidance =
     Array.isArray(value?.concreteGuidance) && value.concreteGuidance.length >= 3
       ? value.concreteGuidance
@@ -250,30 +273,30 @@ export function normalizeStructuredTarotReading(
       `${categoryCopy.label}這題，關鍵其實在 ${mirrorMeta.nameZh}`,
     reportSubtitle:
       String(value?.reportSubtitle || "").trim() ||
-      `${thresholdMeta.nameZh}${thresholdMeta.orientationZh}揭開起點，${mirrorMeta.nameZh}${mirrorMeta.orientationZh}照出卡點，${horizonMeta.nameZh}${horizonMeta.orientationZh}指出下一步。`,
+      `直答三張牌先用${thresholdRole.labelZh}定住局勢，再由${mirrorRole.labelZh}照出卡點，最後把答案收斂到${horizonRole.labelZh}。`,
     questionCore:
       String(value?.questionCore || "").trim() ||
-      `直接回答你的問題：這件事的關鍵不在表面結果，而在你是否願意先正視 ${categoryCopy.focus}。${thresholdMeta.nameZh}${thresholdMeta.orientationZh}先把起點攤開，${mirrorMeta.nameZh}${mirrorMeta.orientationZh}則提醒你，真正拖慢局勢的卡點其實已經很明顯。`,
+      `直接回答你的問題：這件事的關鍵不在表面結果，而在你是否願意先正視 ${categoryCopy.focus}。這副直答三張牌不是要你一次看完整個未來，而是先用${thresholdRole.labelZh}抓住現在真正的重心，再正面處理${mirrorRole.labelZh}指出的卡點。`,
     constellationLine:
       String(value?.constellationLine || "").trim() ||
-      `${thresholdMeta.nameZh}落在${thresholdMeta.roleLabel}，先講出局勢從哪裡開始偏掉；${mirrorMeta.nameZh}落在${mirrorMeta.roleLabel}，把你一直不想正視的核心照出來；${horizonMeta.nameZh}落在${horizonMeta.roleLabel}，把答案推向下一步行動。`,
+      `${thresholdMeta.nameZh}落在${thresholdRole.labelZh}，先講出局勢此刻真正的起點；${mirrorMeta.nameZh}落在${mirrorRole.labelZh}，把你一直不想正視的核心照出來；${horizonMeta.nameZh}落在${horizonRole.labelZh}，把答案推向下一步行動。`,
     spreadAxis:
       String(value?.spreadAxis || "").trim() ||
-      `整個牌陣把焦點放在${categoryDisplay.labelZh}這條主線上。它不是要你立刻衝結果，而是要你先看懂起點、盲點與下一步之間的連動，否則就算很想推進，也只會在原地打轉。`,
+      `這副「直答三張牌」把焦點放在${categoryDisplay.labelZh}這條主線上。它不是要你立刻衝結果，而是要你先看懂${thresholdRole.labelZh}、${mirrorRole.labelZh}與${horizonRole.labelZh}之間的連動，否則就算很想推進，也只會在原地打轉。`,
     cardReadings: {
       threshold:
         String(value?.cardReadings?.threshold || "").trim() ||
-        `${thresholdMeta.nameZh}${thresholdMeta.orientationZh}落在${thresholdMeta.roleLabel}，先把局勢的起點講清楚：${thresholdMeta.meaning} 這代表問題一開始就不是單看結果，而是你早就感受到某個訊號，只是還沒有真正對它採取行動。`,
+        `${thresholdMeta.nameZh}${thresholdMeta.orientationZh}落在${thresholdRole.labelZh}，先把局勢的起點講清楚：${thresholdMeta.meaning} 這代表問題一開始就不是單看結果，而是你早就感受到某個訊號，只是還沒有真正對它採取行動。`,
       mirror:
         String(value?.cardReadings?.mirror || "").trim() ||
-        `${mirrorMeta.nameZh}${mirrorMeta.orientationZh}落在${mirrorMeta.roleLabel}，照出你現在最需要正視的盲點：${mirrorMeta.meaning} 它讓你看見，真正拖慢你的不只是外在局勢，還有你對這件事的既有慣性或防衛。`,
+        `${mirrorMeta.nameZh}${mirrorMeta.orientationZh}落在${mirrorRole.labelZh}，照出你現在最需要正視的盲點：${mirrorMeta.meaning} 它讓你看見，真正拖慢你的不只是外在局勢，還有你對這件事的既有慣性或防衛。`,
       horizon:
         String(value?.cardReadings?.horizon || "").trim() ||
-        `${horizonMeta.nameZh}${horizonMeta.orientationZh}落在${horizonMeta.roleLabel}，指出接下來最可能發生的走向：${horizonMeta.meaning} 這張牌不是在替你下結論，而是在告訴你，只要方向對了，局勢接下來會怎麼鬆動。`,
+        `${horizonMeta.nameZh}${horizonMeta.orientationZh}落在${horizonRole.labelZh}，指出接下來最可能發生的走向：${horizonMeta.meaning} 這張牌不是在替你下結論，而是在告訴你，只要方向對了，局勢接下來會怎麼鬆動。`,
     },
     progression:
       String(value?.progression || "").trim() ||
-      `這副牌的進程很清楚：先由 ${thresholdMeta.nameZh} 把真正的起點打開，再透過 ${mirrorMeta.nameZh} 看見核心卡點，最後才輪到 ${horizonMeta.nameZh} 把局勢推向下一個動作。順序不能跳，越想直接求答案，反而越容易錯過答案。`,
+      `這副牌的進程很清楚：先由 ${thresholdRole.labelZh} 把真正的起點打開，再透過 ${mirrorRole.labelZh} 看見核心卡點，最後才輪到 ${horizonRole.labelZh} 把局勢推向下一個動作。它不是過去、現在、未來的時間線，而是一條收斂答案的路徑。`,
     nearTermTrend:
       String(value?.nearTermTrend || "").trim() ||
       `短期內最明顯的變化，會出現在你願不願意按照牌意收斂動作。只要你先做到「${categoryCopy.move}」，局勢就不會一直卡住，而會慢慢朝著「${categoryCopy.trend}」那條線移動。`,
@@ -358,6 +381,9 @@ export function mapRecordToReadingRecord(record: ReadingRecordInput): ReadingRec
 export function buildReadingSections(record: ReadingRecord): ReadingSectionView[] {
   const reading = record.fullReading;
   const [threshold, mirror, horizon] = record.cardsSnapshot;
+  const thresholdRole = getCardRoleDisplayMeta(threshold?.role ?? "Threshold");
+  const mirrorRole = getCardRoleDisplayMeta(mirror?.role ?? "Mirror");
+  const horizonRole = getCardRoleDisplayMeta(horizon?.role ?? "Horizon");
 
   if (!reading) {
     return [];
@@ -374,42 +400,42 @@ export function buildReadingSections(record: ReadingRecord): ReadingSectionView[
     {
       id: "axis",
       eyebrow: "二、牌陣主線",
-      title: "三張牌一路串起來的整體答案",
+      title: "現況核心、隱藏阻力與最佳走向怎麼扣成同一題",
       body: reading.spreadAxis,
       accent: record.cardsSnapshot[1]?.keywords[0] ?? "pattern",
     },
     {
       id: "threshold",
-      eyebrow: "三、第一張牌",
-      title: `${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameZh}在起手位說了什麼`,
+      eyebrow: `三、${thresholdRole.labelZh}`,
+      title: `${getCardDisplayMeta(threshold?.id ?? "high-priestess").nameZh}如何說明${thresholdRole.labelZh}`,
       body: reading.cardReadings.threshold,
       accent: threshold?.keywords[1] ?? "opening",
     },
     {
       id: "mirror",
-      eyebrow: "四、第二張牌",
-      title: `${getCardDisplayMeta(mirror?.id ?? "moon").nameZh}照出了什麼盲點`,
+      eyebrow: `四、${mirrorRole.labelZh}`,
+      title: `${getCardDisplayMeta(mirror?.id ?? "moon").nameZh}照出了哪個${mirrorRole.labelZh}`,
       body: reading.cardReadings.mirror,
       accent: mirror?.keywords[1] ?? "reflection",
     },
     {
       id: "horizon",
-      eyebrow: "五、第三張牌",
-      title: `${getCardDisplayMeta(horizon?.id ?? "sun").nameZh}把方向帶往哪裡`,
+      eyebrow: `五、${horizonRole.labelZh}`,
+      title: `${getCardDisplayMeta(horizon?.id ?? "sun").nameZh}把答案帶往哪個${horizonRole.labelZh}`,
       body: reading.cardReadings.horizon,
       accent: horizon?.keywords[1] ?? "direction",
     },
     {
       id: "trend",
       eyebrow: "六、近期走勢",
-      title: "接下來短期內最可能出現的變化",
+      title: "接下來一到四週，局勢最可能怎麼動",
       body: reading.nearTermTrend,
       accent: record.cardsSnapshot[2]?.keywords[0] ?? "timing",
     },
     {
       id: "guidance",
-      eyebrow: "七、實際建議",
-      title: "你現在最該立刻採取的動作",
+      eyebrow: "七、關鍵建議",
+      title: "你現在最值得立刻執行的三步",
       body: reading.concreteGuidance.join(" "),
       accent: "practice",
     },

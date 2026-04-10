@@ -14,7 +14,7 @@ export async function POST() {
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "請先登入，才能領取今日點數。" },
+      { message: "請先登入後再領取每日點數。" },
       { status: 401 },
     );
   }
@@ -30,7 +30,7 @@ export async function POST() {
   } catch {
     return NextResponse.json(
       {
-        message: "今日回訪暫時沒有入帳，請稍後再試一次。",
+        message: "今天的每日點數暫時無法領取，請稍後再試一次。",
       },
       { status: 500 },
     );

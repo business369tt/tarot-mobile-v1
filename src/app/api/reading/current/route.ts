@@ -6,6 +6,7 @@ import {
   getMiniMaxReadingModel,
 } from "@/lib/minimax-reading";
 import { logAiEvent } from "@/lib/ai-monitoring";
+import { cardRoles } from "@/lib/mock-tarot-data";
 import { prisma } from "@/lib/prisma";
 import { buildReadingPointsHref, readingCostPoints } from "@/lib/points";
 import { ensureReadingCharge, getViewerPoints } from "@/lib/points-ledger";
@@ -68,8 +69,8 @@ function sessionCanGenerateReading(ownerId: string, record: Awaited<ReturnType<t
   if (
     session.ownerViewerId !== ownerId ||
     !session.question.trim() ||
-    session.selectedCards.length !== 3 ||
-    session.revealed < 3
+    session.selectedCards.length !== cardRoles.length ||
+    session.revealed < cardRoles.length
   ) {
     return {
       ok: false as const,

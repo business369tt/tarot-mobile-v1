@@ -22,7 +22,7 @@ export async function GET(
 
   if (!viewerId) {
     return NextResponse.json(
-      { message: "請先登入，才能查看這筆補點。" },
+      { message: "請先登入後再查看補點訂單。" },
       { status: 401 },
     );
   }
@@ -32,7 +32,7 @@ export async function GET(
 
   if (!order) {
     return NextResponse.json(
-      { message: "這筆補點目前無法重新打開。" },
+      { message: "這筆補點訂單目前無法查看。" },
       { status: 404 },
     );
   }

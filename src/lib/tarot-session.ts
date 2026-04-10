@@ -1,5 +1,6 @@
 import {
   buildSelectedCard,
+  cardRoles,
   buildSpread,
   defaultQuestion,
   getCategoryMeta,
@@ -99,7 +100,7 @@ function normalizeSelectedCards(value: unknown) {
   }
 
   return value
-    .slice(0, 3)
+    .slice(0, cardRoles.length)
     .map((card: unknown, index: number) => {
       if (!card || typeof card !== "object") {
         return null;
@@ -151,11 +152,11 @@ export function deriveSessionStep(session: TarotSession): TarotFlowStep {
     return "ritual";
   }
 
-  if (session.selectedCards.length < 3) {
+  if (session.selectedCards.length < cardRoles.length) {
     return "draw";
   }
 
-  if (session.revealed < 3) {
+  if (session.revealed < cardRoles.length) {
     return "reveal";
   }
 

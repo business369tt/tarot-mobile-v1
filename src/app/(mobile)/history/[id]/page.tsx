@@ -15,16 +15,16 @@ export default async function HistoryDetailPage({
   if (!viewerId) {
     return (
       <HistoryStateCard
-        eyebrow="查看紀錄"
+        eyebrow="歷史紀錄"
         eyebrowEn="History"
-        title="先登入再打開這筆紀錄"
+        title="登入後才能打開這份紀錄"
         titleEn="Sign in to open this record"
-        body="這筆內容只會跟著原本的 LINE 身份。"
-        bodyEn="This record stays with the LINE profile that opened it."
+        body="這份解讀會保留在當初建立它的帳號底下，登入後就能接回原本的閱讀脈絡。"
+        bodyEn="This record stays with the profile that opened it."
         primaryHref="/auth/line"
-        primaryLabel="使用 LINE 登入"
+        primaryLabel="登入後繼續"
         secondaryHref="/history"
-        secondaryLabel="回到紀錄"
+        secondaryLabel="返回歷史紀錄"
       />
     );
   }
@@ -34,16 +34,16 @@ export default async function HistoryDetailPage({
   if (!record) {
     return (
       <HistoryStateCard
-        eyebrow="找不到紀錄"
+        eyebrow="紀錄暫時無法開啟"
         eyebrowEn="Record unavailable"
-        title="這筆紀錄目前無法打開"
+        title="這份解讀目前不在你的可查看範圍內"
         titleEn="This record is unavailable"
-        body="它可能不屬於你目前的身份，或尚未保存。"
+        body="它可能屬於其他帳號，或是當初沒有被保存進歷史紀錄。"
         bodyEn="It may belong to another profile, or it may not have been saved."
         primaryHref="/history"
-        primaryLabel="回到紀錄"
+        primaryLabel="回到歷史列表"
         secondaryHref="/question"
-        secondaryLabel="開始新的解讀"
+        secondaryLabel="開始新的提問"
       />
     );
   }

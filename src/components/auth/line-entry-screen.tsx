@@ -27,24 +27,27 @@ function getInviteMessage(
   if (inviteClaim.status === "rewarded") {
     return inviteClaim.inviterName
       ? t(
-          `邀請已綁定，獎勵已回到 ${inviteClaim.inviterName} 的餘額。`,
+          `已連結邀請關係，獎勵點數已加入 ${inviteClaim.inviterName} 的帳戶。`,
           `Invite linked. The reward was added to ${inviteClaim.inviterName}'s balance.`,
         )
       : t(
-          "邀請已綁定，獎勵已回到分享者的餘額。",
+          "已連結邀請關係，獎勵點數已加入分享者的帳戶。",
           "Invite linked. The reward was added to the sharer's balance.",
         );
   }
 
   if (inviteClaim.status === "already_rewarded") {
     return t(
-      "這筆邀請獎勵已經處理完成。",
+      "這組邀請獎勵已經領取過了。",
       "This invite reward was already claimed.",
     );
   }
 
   if (inviteClaim.status === "already_attached") {
-    return t("這個邀請已經綁定到其他帳號。", "This invite is already attached.");
+    return t(
+      "這組邀請已經綁定到其他帳戶。",
+      "This invite is already attached.",
+    );
   }
 
   if (inviteClaim.status === "self") {
@@ -52,10 +55,13 @@ function getInviteMessage(
   }
 
   if (inviteClaim.status === "invalid") {
-    return t("這個邀請碼目前無法使用。", "This invite code is unavailable.");
+    return t("這組邀請碼目前無法使用。", "This invite code is unavailable.");
   }
 
-  return t("邀請狀態目前無法確認。", "Invite status is unavailable right now.");
+  return t(
+    "邀請狀態暫時無法確認，請稍後再試。",
+    "Invite status is unavailable right now.",
+  );
 }
 
 export function LineEntryScreen(props: {
@@ -90,7 +96,7 @@ export function LineEntryScreen(props: {
       ? t("Google", "Google")
       : authProvider === "line"
         ? t("LINE", "LINE")
-        : t("帳號", "account");
+        : t("帳戶", "account");
 
   async function handleLineSignIn() {
     await beginLineSignIn(callbackUrl);
@@ -113,7 +119,7 @@ export function LineEntryScreen(props: {
       <section className="flex flex-1 flex-col justify-center py-8">
         <div className="space-y-3 rounded-[2rem] bg-white/[0.04] px-5 py-6">
           <p className="text-sm text-foreground/56">
-            {t("準備中", "Preparing")}
+            {t("正在準備", "Preparing")}
           </p>
           <h1 className="text-[2rem] font-semibold leading-tight tracking-tight text-card-foreground">
             {t("正在確認你的登入狀態。", "Checking your sign-in status.")}
@@ -127,24 +133,22 @@ export function LineEntryScreen(props: {
     <section className="flex flex-1 flex-col justify-between gap-8 py-6">
       <div className="space-y-6 pt-6">
         <div className="space-y-3">
-          <p className="text-sm text-foreground/56">
-            {t("登入", "Sign in")}
-          </p>
+          <p className="text-sm text-foreground/56">{t("登入", "Sign in")}</p>
           <h1 className="max-w-[13rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
             {isAuthenticated
-              ? t("你已登入", "You're signed in")
+              ? t("已完成登入", "You're signed in")
               : t("先登入再開始", "Sign in first")}
           </h1>
           <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
             {isAuthenticated
               ? displayName
                 ? t(
-                    `${displayName} 已連接到這個解讀流程。`,
+                    `${displayName} 已連結到這次的解讀流程。`,
                     `${displayName} is connected to this reading flow.`,
                   )
-                : t("你的帳號已連接。", "Your account is connected.")
+                : t("你的帳戶已連結到目前流程。", "Your account is connected.")
               : t(
-                  "登入後即可開始、保存紀錄，並保留你的點數與邀請進度。",
+                  "登入後即可開始、保存歷史紀錄，並保留點數與邀請進度。",
                   "Sign in to begin, save history, and keep your points and invite progress.",
                 )}
           </p>
@@ -164,8 +168,8 @@ export function LineEntryScreen(props: {
             className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-center text-base font-semibold text-black transition hover:opacity-92"
           >
             {hasCurrentReading
-              ? t("回到上次流程", "Continue")
-              : t("開始", "Start")}
+              ? t("繼續這次解讀", "Continue")
+              : t("開始新的解讀", "Start")}
           </Link>
 
           <button
@@ -184,7 +188,7 @@ export function LineEntryScreen(props: {
             className="text-sm text-foreground/56 transition hover:text-foreground"
           >
             {t(
-              `改用其他${providerLabel}帳號`,
+              `改用其他 ${providerLabel}`,
               `Use another ${providerLabel}`,
             )}
           </button>
@@ -199,7 +203,7 @@ export function LineEntryScreen(props: {
               }}
               className="min-h-[3.75rem] rounded-[1.5rem] bg-white px-5 py-4 text-base font-semibold text-black transition hover:opacity-92"
             >
-              {t("使用 LINE 登入", "Continue with LINE")}
+              {t("使用 LINE 繼續", "Continue with LINE")}
             </button>
           ) : null}
 
@@ -211,7 +215,7 @@ export function LineEntryScreen(props: {
               }}
               className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
             >
-              {t("使用 Google 登入", "Continue with Google")}
+              {t("使用 Google 繼續", "Continue with Google")}
             </button>
           ) : null}
 
@@ -219,13 +223,13 @@ export function LineEntryScreen(props: {
             href="/"
             className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-black/18 px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
           >
-            {t("回到首頁", "Back to home")}
+            {t("返回首頁", "Back to home")}
           </Link>
 
           {!hasAnyProvider ? (
             <p className="text-sm leading-6 text-foreground/50">
               {t(
-                "目前尚未完成任何登入方式設定。",
+                "目前尚未設定可用的登入方式。",
                 "No sign-in provider is configured yet.",
               )}
             </p>

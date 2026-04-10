@@ -57,17 +57,34 @@ Notes:
 
 ### 3. Reading Payment Recovery
 
-Status: Not yet evidenced
+Status: Passed
 
-- No screenshot or manual result confirms the points-required pause state.
-- No screenshot or manual result confirms ECPay success and automatic return to `/reading`.
+- A new reading was started from `/question`, completed through ritual, draw, and reveal, then correctly paused in a points-required state before the final reading result.
+- The reading recovery screen preserved the pending question and selected three-card spread.
+- The restore CTA correctly led to `/points` with reading-specific recovery copy.
+- The account balance at that point was `0`, while reading cost remained `3`.
+- Daily check-in had already been claimed, so recovery proceeded through the paid ECPay path.
+- ECPay payment completed successfully.
+- After payment, the browser returned to `/reading`.
+- The full new reading rendered successfully without replaying question entry, ritual, card draw, or reveal.
 
 ### 4. Follow-Up Payment Recovery
 
-Status: Not yet evidenced
+Status: Partially evidenced, with one blocking bug
 
-- No screenshot or manual result confirms the follow-up pause state.
-- No screenshot or manual result confirms ECPay success and automatic return to `/reading?resume=followup`.
+- Follow-up submission correctly entered a points-required state when the account only had `1` point and follow-up cost was `2` points.
+- The follow-up restore CTA correctly led to `/points` with follow-up-specific recovery copy.
+- Daily check-in successfully added `+1` point, bringing balance from `1` to `2`.
+- `/points` correctly switched to a sufficient-balance state and offered a return-to-flow CTA.
+- The return CTA sent the user back to `/reading`, but the page still showed `需補點` and did not automatically resume the pending follow-up.
+- Refreshing `/reading` did not resolve the stuck state.
+- Manually opening `/reading?resume=followup` correctly restored the follow-up context and showed the completed follow-up thread.
+
+Current finding:
+
+- The recovery core works, but the return-to-flow behavior is wrong for follow-up recovery.
+- The local root cause is confirmed: the points return CTA keeps `/reading` instead of preserving `?resume=followup` once balance becomes sufficient.
+- A local UI fix is prepared, but staging still needs one re-check after deployment.
 
 ### 5. ECPay Failure Paths
 
@@ -77,25 +94,38 @@ Status: Not yet evidenced
 
 ### 6. Archive And Invite
 
-Status: Partially evidenced
+Status: Partially evidenced, with invite reward inconsistency
 
 - `/history` renders correctly.
-- Saved readings appear in history.
-- A concrete saved reading entry for `test` is visible in history.
-- The screenshot shows prior readings with follow-up counts, which suggests persisted archive data exists.
-- No screenshot or manual result confirms invite claim end-to-end settlement in both `/invite` and `/points`.
+- Newly completed readings appear in history.
+- A new reading titled `愛的視線` appeared in history after paid reading recovery completed.
+- The history detail page reopened correctly and rendered the stored reading content.
+- `/invite` renders with launch-safe product copy and no obvious incomplete-browser or dev-gap messaging.
+- Invite link generation worked and produced a valid `auth/line?ref=...` URL.
+- Opening the invite link in a private session led to the LINE login entry point correctly.
+- The invited account completed login and saw `邀請獎勵已入帳。`
+- Later manual verification from the user states the invited account did **not** actually receive the invite reward points.
+- The inviter account did show an `邀請獎勵 +4 點` entry.
+
+Current finding:
+
+- The actual settlement path in code is inviter-side only, which matches the invite page and points ledger copy.
+- The mismatch is in the invited account success message, which currently reads as though the invited account itself received the reward.
+- A local copy fix is prepared so the invited account sees an attached / linked success state while inviter-side settlement remains the acceptance target.
 
 ### 7. Daily Check-In
 
-Status: Not yet evidenced
+Status: Partially evidenced
 
-- No screenshot or manual result confirms first claim, refresh persistence, or same-day idempotency.
+- Daily check-in successfully added `+1` point during follow-up recovery.
+- After the reward was claimed, the points page switched to an already-claimed state for the day.
+- Same-day idempotency was observed in the UI after the reward had been claimed, but no repeated action was intentionally retried after the successful claimed state was already visible.
 
 ### 8. Fallbacks
 
-Status: Not yet evidenced
+Status: Partially evidenced
 
-- No screenshot or manual result confirms branded 404.
+- Opening a bad URL rendered a branded 404 page with launch-safe copy and clear navigation actions.
 - No screenshot or manual result confirms branded route error fallback.
 - No screenshot or manual result confirms missing LINE / ECPay / MiniMax env fallback behavior.
 

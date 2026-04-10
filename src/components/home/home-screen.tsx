@@ -7,37 +7,37 @@ import { useLocale } from "@/components/i18n/locale-provider";
 
 const spreadPoints = [
   {
-    zhTitle: "過去",
-    enTitle: "Past",
-    zhBody: "回看這個問題如何一路走到現在。",
-    enBody: "See how the story arrived here.",
+    zhTitle: "現況核心",
+    enTitle: "Core reality",
+    zhBody: "先看清現在最重要的主軸，知道問題真正卡在哪裡。",
+    enBody: "See the core of the situation before anything else.",
   },
   {
-    zhTitle: "現在",
-    enTitle: "Present",
-    zhBody: "看清目前最核心的局勢與情緒。",
-    enBody: "See what matters most right now.",
+    zhTitle: "隱藏阻力",
+    enTitle: "Hidden resistance",
+    zhBody: "找出表面之下真正拖住你的情緒、誤解或外在壓力。",
+    enBody: "Find the unseen force slowing things down.",
   },
   {
-    zhTitle: "未來",
-    enTitle: "Future",
-    zhBody: "理解接下來最可能展開的方向。",
-    enBody: "Understand what is likely to unfold next.",
+    zhTitle: "最佳走向",
+    enTitle: "Best direction",
+    zhBody: "把下一步收斂成更清楚、更可執行的方向。",
+    enBody: "Turn the reading into a clearer next move.",
   },
 ] as const;
 
 const readingPromises = [
   {
-    zh: "先看清問題的根源，再進入這次牌陣的核心訊號。",
-    en: "Start with the root of the question, then move into the core signal.",
+    zh: "不是泛用的過去、現在、未來，而是圍繞你的問題做直答三張牌解讀。",
+    en: "This is not a generic past-present-future spread.",
   },
   {
-    zh: "用三張牌整理局勢，再交給 AI 做更完整的解讀。",
-    en: "Organize the spread with three cards, then turn it into a full AI reading.",
+    zh: "AI 會整合牌義、正逆位與牌位關係，給出更貼近問題的解讀與建議。",
+    en: "The AI combines card meaning, orientation, and spread position.",
   },
   {
-    zh: "讀完後還能回來續問、補點，並保留同一次解讀脈絡。",
-    en: "Continue, top up, and return to the same reading thread later.",
+    zh: "完成後可以繼續追問、補點與回看歷史，讓每次占卜都留下完整脈絡。",
+    en: "You can follow up, top up, and revisit the same reading later.",
   },
 ] as const;
 
@@ -53,13 +53,13 @@ export function HomeScreen() {
       ? "/question"
       : "/auth/line";
   const primaryLabel = hasCurrentReading
-    ? t("繼續上次解讀", "Continue")
+    ? t("繼續這次解讀", "Continue this reading")
     : isAuthenticated
-      ? t("立即抽三張牌", "Draw three cards now")
-      : t("使用 LINE 立即開始", "Start with LINE");
+      ? t("開始直答三張牌", "Start the three-card spread")
+      : t("先用 LINE 登入", "Sign in with LINE");
   const heroNote = hasCurrentReading
-    ? t("從剛才的位置繼續完成解讀", "Resume from where you left off")
-    : t("約 1 分鐘完成抽牌流程", "About 1 minute to finish");
+    ? t("從上次停下的位置繼續", "Resume from where you left off")
+    : t("1 個問題，約 1 分鐘完成一次完整解讀", "A full reading in about one minute");
 
   return (
     <div className="flex flex-col gap-8 pb-12 pt-2">
@@ -79,20 +79,20 @@ export function HomeScreen() {
 
         <div className="relative z-10 flex flex-col items-center text-center">
           <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
-            {t("三張牌解讀", "THREE CARD READING")}
+            {t("直答三張牌", "THREE CARD READING")}
           </span>
 
           <div className="mt-5 max-w-[18.5rem] space-y-4">
             <h1 className="font-display text-[2.9rem] leading-[0.95] tracking-[-0.05em] text-card-foreground">
               {t(
-                "現在抽三張牌\n立刻獲得 AI 深度解讀",
-                "Draw three cards now and get an AI reading instantly",
+                "讓問題更快變清楚\n從這三張牌開始",
+                "Make the question clearer with three cards",
               )}
             </h1>
             <p className="text-[0.98rem] leading-7 text-foreground/74">
               {t(
-                "以儀式感抽牌流程結合 AI 解讀，快速看懂感情、事業與當下方向。",
-                "A ritual draw flow with AI insight for love, work, and direction.",
+                "用現況核心、隱藏阻力、最佳走向，收斂你現在真正該看的答案。",
+                "A focused three-card spread for clearer answers.",
               )}
             </p>
           </div>
@@ -112,8 +112,8 @@ export function HomeScreen() {
                 href="/history"
                 className="inline-flex items-center gap-2 text-sm font-medium text-foreground/56 transition hover:text-foreground"
               >
-                <span>{t("查看我的紀錄", "View my archive")}</span>
-                <span aria-hidden="true">›</span>
+                <span>{t("查看我的解讀紀錄", "View my archive")}</span>
+                <span aria-hidden="true">→</span>
               </Link>
             ) : null}
           </div>
@@ -138,7 +138,7 @@ export function HomeScreen() {
           <div className="mt-6 grid w-full grid-cols-3 gap-2 text-center">
             {spreadPoints.map((point) => (
               <div key={point.zhTitle} className="space-y-1">
-                <p className="text-[1.05rem] font-semibold text-[#f0cb97]">
+                <p className="text-[1.02rem] font-semibold text-[#f0cb97]">
                   {t(point.zhTitle, point.enTitle)}
                 </p>
                 <p className="text-xs leading-5 text-foreground/56">
@@ -155,7 +155,7 @@ export function HomeScreen() {
           <div className="space-y-2">
             <p className="text-sm text-foreground/46">{t("AI 解讀", "AI reading")}</p>
             <h2 className="text-[1.5rem] font-semibold tracking-tight text-card-foreground">
-              {t("不是只抽牌，而是更快看懂自己", "Not just a draw, but a clearer answer")}
+              {t("不是只抽牌，而是把答案說得更清楚", "More than a draw")}
             </h2>
           </div>
 

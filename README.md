@@ -1,6 +1,6 @@
 # Tarot Mobile V1
 
-Mobile-first tarot reading app built with Next.js App Router, TypeScript, Tailwind CSS, Auth.js, Prisma, LINE Login, ECPay, and MiniMax.
+Mobile-first tarot reading app built with Next.js App Router, TypeScript, Tailwind CSS, Auth.js, Prisma, LINE Login, Google Login, ECPay, and MiniMax.
 
 ## Local setup
 
@@ -30,6 +30,8 @@ AUTH_SECRET="replace-with-a-long-random-secret"
 APP_TIMEZONE="Asia/Taipei"
 AUTH_LINE_ID="your-line-channel-id"
 AUTH_LINE_SECRET="your-line-channel-secret"
+AUTH_GOOGLE_ID="your-google-client-id"
+AUTH_GOOGLE_SECRET="your-google-client-secret"
 ECPAY_ENV="test"
 ECPAY_MERCHANT_ID="your-ecpay-merchant-id"
 ECPAY_HASH_KEY="your-ecpay-hash-key"
@@ -64,6 +66,16 @@ ${AUTH_URL}/api/auth/callback/line
 ```
 
 For local development that is usually `http://localhost:3000/api/auth/callback/line`.
+
+## Google Login
+
+Use this callback URL in the Google Cloud Console OAuth client:
+
+```bash
+${AUTH_URL}/api/auth/callback/google
+```
+
+For local development that is usually `http://localhost:3000/api/auth/callback/google`.
 
 ## ECPay top-up flow
 
