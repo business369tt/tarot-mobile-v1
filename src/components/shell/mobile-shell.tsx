@@ -82,12 +82,12 @@ export function MobileShell({
           </span>
         </header>
 
-        <main className={`flex flex-1 flex-col ${isHome ? "pb-8" : "pb-6"}`}>
+        <main className={`flex flex-1 flex-col ${isHome ? "pb-10" : "pb-8"}`}>
           {children}
         </main>
 
-        <footer className="mt-auto pb-[calc(env(safe-area-inset-bottom)+6px)]">
-          <nav className="grid grid-cols-3 gap-2 rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-2 backdrop-blur">
+        <footer className="mt-auto px-1 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-2">
+          <nav className="grid grid-cols-3 gap-2 rounded-[1.75rem] border border-[rgba(240,203,151,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.34)] backdrop-blur-xl">
             {navItems.map((item) => {
               const href = item.href === "/question" ? flowHref : item.href;
               const isActive = isActivePath(pathname, item);
@@ -96,10 +96,10 @@ export function MobileShell({
                 <Link
                   key={item.href}
                   href={href}
-                  className={`rounded-[1.2rem] px-3 py-3 text-center text-sm font-medium transition ${
+                  className={`flex min-h-[3rem] items-center justify-center rounded-[1.2rem] px-3 py-3 text-center text-sm font-medium transition ${
                     isActive
-                      ? "bg-white text-black"
-                      : "text-foreground/56 hover:text-foreground"
+                      ? "bg-[#f3e5cf] text-[#17130e] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_8px_20px_rgba(0,0,0,0.18)]"
+                      : "text-foreground/60 hover:bg-white/[0.04] hover:text-foreground"
                   }`}
                 >
                   {locale === "zh-TW" ? item.zh : item.en}
