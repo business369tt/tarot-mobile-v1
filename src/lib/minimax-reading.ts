@@ -26,7 +26,8 @@ const anthropicVersion = "2023-06-01";
 const blockedAiPhrases =
   /作為AI|作为AI|我是AI|語言模型|语言模型|language model|大型模型|無法保證|无法保证|以下是/i;
 const markdownFencePattern = /```/;
-const commonSimplifiedPattern = /[这来为们个后会让应还开点话说将并与题读]/;
+const commonSimplifiedPattern =
+  /[这来为们个后会让应还开点话说将并与题读独谈继续显脑责项战错准备冲讲别摊]/;
 
 type MiniMaxMessageResponse = {
   content?: Array<
@@ -255,7 +256,7 @@ function isNaturalTraditionalChineseTextV2(value: string) {
   }
 
   const residualSimplifiedCount =
-    normalized.match(/[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听联请于经资决潜变试带绪类语质单纯当钟础稳压缩态]/g)?.length ??
+    normalized.match(/[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听联请于经资决潜变试带绪类语质单纯当钟础稳压缩态独谈继续显脑责项战错准备冲讲别摊]/g)?.length ??
     0;
 
   return residualSimplifiedCount <= 6;
@@ -266,7 +267,7 @@ function isActionableGuidanceV2(value: string) {
 
   return (
     zhTwActionableLeadPattern.test(normalized) ||
-    /(?:先|寫下|列出|整理|釐清|確認|不要|停止|直接|安排|給自己|回去|保留|收斂|觀察|準備)/.test(
+    /(?:先|寫下|列出|整理|釐清|確認|不要|停止|直接|安排|給自己|回去|保留|收斂|觀察|準備|今天開始|找一個|拿一張紙|說一句|留出|花十分鐘|用一個|用這句)/.test(
       normalized,
     )
   );
@@ -296,6 +297,16 @@ function mergeStructuredReadingCandidate(
 
     return normalized.length >= minLength ? normalized : fallbackValue;
   }
+
+  const mergedGuidance = fallbackBase.concreteGuidance.map((fallbackItem, index) => {
+    const candidateItem = guidance[index];
+
+    if (candidateItem && candidateItem.length >= 12 && isActionableGuidanceV2(candidateItem)) {
+      return candidateItem;
+    }
+
+    return fallbackItem;
+  }) as [string, string, string];
 
   return {
     ...candidate,
@@ -335,10 +346,7 @@ function mergeStructuredReadingCandidate(
       fallbackBase.nearTermTrend,
       18,
     ),
-    concreteGuidance:
-      guidance.length === 3
-        ? ([guidance[0], guidance[1], guidance[2]] as [string, string, string])
-        : fallbackBase.concreteGuidance,
+    concreteGuidance: mergedGuidance,
     closingReminder: preferField(
       candidate.closingReminder,
       fallbackBase.closingReminder,
@@ -356,15 +364,15 @@ function delay(ms: number) {
 const zhTwBlockedAiPattern =
   /(?:作為|身為|我是|我是一個)?\s*(?:AI|人工智慧|語言模型)|language model/i;
 const zhTwResidualSimplifiedPattern =
-  /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听]/;
+  /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听独谈继续显脑责项战错准备冲讲别摊]/;
 const zhTwTemplatePattern =
-  /(?:這件事的關鍵不在表面結果|這副直答三張牌不是要你一次看完整個未來|先用現況核心抓住現在真正的重心|再正面處理隱藏阻力指出的卡點|最後把答案收斂到最佳走向)/;
+  /(?:這件事的關鍵不在表面結果|這副直答三張牌不是要你一次看完整個未來|先用現況核心抓住現在真正的重心|再正面處理隱藏阻力指出的卡點|直答三張牌先用現況核心(?:抓住現在真正的重心|定住局勢)，再(?:正面處理|由)隱藏阻力(?:指出的|照出)卡點，最後把答案收斂到最佳走向)/;
 const zhTwWeakLeadPattern =
   /^(?:也許|可能|某種程度上|整體來說|大致上|看起來|可以先理解成)/;
 const zhTwVaguePattern =
   /(?:某種程度|某個部分|也許|似乎|看起來|有可能|一些情況|慢慢來|之後再看看)/g;
 const zhTwActionableLeadPattern =
-  /^(?:先|先把|正視|依照|把|列出|寫下|釐清|確認|停止|暫停|直接|回去|保留|收斂|安排|觀察|記下|刪掉|補上|設定|只做|今天先|這週先|先別|不要|試著|開始)/;
+  /^(?:先|先把|正視|依照|把|列出|寫下|釐清|確認|停止|暫停|直接|回去|保留|收斂|安排|觀察|記下|刪掉|補上|設定|只做|今天先|今天開始|這週先|先別|不要|試著|開始|找一個|拿一張紙|拿出|留出|花十分鐘|花一點時間|說一句|用)/;
 const zhTwQuestionStopSignals = new Set([
   "我",
   "你",
@@ -418,6 +426,22 @@ const simplifiedPhraseReplacements = [
   ["后果", "後果"],
   ["压力", "壓力"],
   ["讯号", "訊號"],
+  ["独处", "獨處"],
+  ["谈合作", "談合作"],
+  ["继续", "繼續"],
+  ["显得", "顯得"],
+  ["大脑", "大腦"],
+  ["责任", "責任"],
+  ["选项", "選項"],
+  ["战车", "戰車"],
+  ["错过", "錯過"],
+  ["准备", "準備"],
+  ["冲动", "衝動"],
+  ["冲刺", "衝刺"],
+  ["布局", "佈局"],
+  ["摊开", "攤開"],
+  ["讲清楚", "講清楚"],
+  ["讲的是", "講的是"],
   ["第一句话", "第一句話"],
   ["第一句", "第一句"],
   ["什么信号", "什麼訊號"],
@@ -500,6 +524,22 @@ const simplifiedCharMap: Record<string, string> = {
   压: "壓",
   缩: "縮",
   态: "態",
+  独: "獨",
+  谈: "談",
+  继: "繼",
+  续: "續",
+  显: "顯",
+  脑: "腦",
+  责: "責",
+  项: "項",
+  战: "戰",
+  错: "錯",
+  准: "準",
+  备: "備",
+  冲: "衝",
+  讲: "講",
+  别: "別",
+  摊: "攤",
 };
 
 void [
@@ -526,7 +566,7 @@ function normalizeTraditionalChinese(value: string) {
   }
 
   return normalized.replace(
-    /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听于经资决潜变试带绪类语质单纯当钟础稳压缩态]/g,
+    /[这们为说会开关时后来过还让从种应动点实里问吗样观风审担复并产气两给对没机个线话觉处体办触号与达进边迟远门广华听于经资决潜变试带绪类语质单纯当钟础稳压缩态独谈继续显脑责项战错准备冲讲别摊]/g,
     (character) => simplifiedCharMap[character] ?? character,
   );
 }

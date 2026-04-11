@@ -273,10 +273,10 @@ export function normalizeStructuredTarotReading(
       `${categoryCopy.label}這題，關鍵其實在 ${mirrorMeta.nameZh}`,
     reportSubtitle:
       String(value?.reportSubtitle || "").trim() ||
-      `直答三張牌先用${thresholdRole.labelZh}定住局勢，再由${mirrorRole.labelZh}照出卡點，最後把答案收斂到${horizonRole.labelZh}。`,
+      `這一局的節奏很清楚：先看${thresholdRole.labelZh}裡真正發生了什麼，再拆開${mirrorRole.labelZh}裡那個拖慢你的點，最後才知道${horizonRole.labelZh}要把局勢帶往哪裡。`,
     questionCore:
       String(value?.questionCore || "").trim() ||
-      `直接回答你的問題：這件事的關鍵不在表面結果，而在你是否願意先正視 ${categoryCopy.focus}。這副直答三張牌不是要你一次看完整個未來，而是先用${thresholdRole.labelZh}抓住現在真正的重心，再正面處理${mirrorRole.labelZh}指出的卡點。`,
+      `如果回到你真正想問的這一題：「${question.trim()}」，眼下最需要先處理的不是表面結果，而是 ${categoryCopy.focus}。先由${thresholdRole.labelZh}看清現在的重心，再把${mirrorRole.labelZh}照出的卡點攤開來，最後才知道${horizonRole.labelZh}要把你帶往哪個方向。`,
     constellationLine:
       String(value?.constellationLine || "").trim() ||
       `${thresholdMeta.nameZh}落在${thresholdRole.labelZh}，先講出局勢此刻真正的起點；${mirrorMeta.nameZh}落在${mirrorRole.labelZh}，把你一直不想正視的核心照出來；${horizonMeta.nameZh}落在${horizonRole.labelZh}，把答案推向下一步行動。`,
