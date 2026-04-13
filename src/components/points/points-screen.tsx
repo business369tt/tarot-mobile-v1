@@ -227,6 +227,13 @@ export function PointsScreen(props: PointsScreenProps) {
   const showDailyCheckIn = !canReturnToFlow;
   const showPackages = !canReturnToFlow;
   const showTransactions = !props.intent;
+  const visibleTransactions = showTransactions
+    ? ledger.transactions.slice(0, 4)
+    : [];
+  const hiddenTransactionCount = Math.max(
+    ledger.transactions.length - visibleTransactions.length,
+    0,
+  );
   const heroTitle = props.intent
     ? canReturnToFlow
       ? `點數已經足夠，回到這次${intentLabel}`
@@ -384,8 +391,10 @@ export function PointsScreen(props: PointsScreenProps) {
 
   return (
     <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-3 pt-4">
-        <p className="text-sm text-foreground/56">{props.intent ? `${intentLabel}補點` : "點數中心"}</p>
+      <div className="space-y-4 pt-6">
+        <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
+          {props.intent ? `${intentLabel}補點` : t("點數", "POINTS")}
+        </span>
         <h1 className="max-w-[15rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
           {heroTitle}
         </h1>
@@ -468,8 +477,8 @@ export function PointsScreen(props: PointsScreenProps) {
           {[
             ["目前可用", `${ledger.points} 點`],
             [props.intent ? `這次${intentLabel}成本` : "主解讀成本", `${props.intent ? actionCost : ledger.readingCostPoints} 點`],
-            [props.intent ? "追問成本" : "追問成本", `${ledger.followupCostPoints} 點`],
-            [props.intent ? "今日簽到" : "今日簽到", `+${ledger.dailyCheckIn.rewardPoints} 點`],
+            ["追問成本", `${ledger.followupCostPoints} 點`],
+            ["每日簽到", `+${ledger.dailyCheckIn.rewardPoints} 點`],
           ].map(([label, value]) => (
             <div key={label} className={metricClass}>
               <p className="text-sm text-foreground/56">{label}</p>
@@ -477,6 +486,40 @@ export function PointsScreen(props: PointsScreenProps) {
             </div>
           ))}
         </div>
+
+        {showDailyCheckIn ? (
+          <div className="mt-4 rounded-[1.3rem] border border-white/10 bg-black/18 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-card-foreground">
+                  {t("今日點數", "Today's points")}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-foreground/62">
+                  {hasClaimedToday
+                    ? t("今天已經領取完成。", "Today's reward has already been claimed.")
+                    : t(
+                        `今天可以直接領取 ${ledger.dailyCheckIn.rewardPoints} 點。`,
+                        `You can claim ${ledger.dailyCheckIn.rewardPoints} points today.`,
+                      )}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={hasClaimedToday || isClaimingCheckIn}
+                onClick={() => {
+                  void handleDailyCheckIn();
+                }}
+                className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {hasClaimedToday
+                  ? t("已領取", "Claimed")
+                  : isClaimingCheckIn
+                    ? t("領取中", "Claiming")
+                    : t("立即領取", "Claim")}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {noticeMessage ? <div className="rounded-[1.5rem] border border-[rgba(229,192,142,0.18)] bg-[linear-gradient(180deg,rgba(185,144,93,0.12),rgba(185,144,93,0.04))] p-4 text-sm leading-7 text-card-foreground">{inlineText(noticeMessage)}</div> : null}
@@ -488,18 +531,6 @@ export function PointsScreen(props: PointsScreenProps) {
             重新整理點數狀態
           </button>
         </div>
-      ) : null}
-
-      {showDailyCheckIn ? (
-        <section className={panelClass}>
-          <h2 className="text-lg font-semibold text-card-foreground">每日點數</h2>
-          <p className="mt-2 text-sm leading-7 text-foreground/62">
-            {hasClaimedToday ? "今天已經領取完成。" : `今天可以免費領取 ${ledger.dailyCheckIn.rewardPoints} 點。`}
-          </p>
-          <button type="button" disabled={hasClaimedToday || isClaimingCheckIn} onClick={() => { void handleDailyCheckIn(); }} className="mt-5 min-h-[3.5rem] w-full rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-45">
-            {hasClaimedToday ? "今天已領取" : isClaimingCheckIn ? "領取中" : "領取今日點數"}
-          </button>
-        </section>
       ) : null}
 
       {showPackages ? (
@@ -536,18 +567,32 @@ export function PointsScreen(props: PointsScreenProps) {
       {showTransactions ? (
         <section className={panelClass}>
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-card-foreground">最近點數動態</h2>
-            <span className="text-sm text-foreground/56">{ledger.transactions.length > 0 ? `最近 ${Math.min(ledger.transactions.length, 24)} 筆` : "尚無紀錄"}</span>
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {t("最近點數動態", "Recent activity")}
+            </h2>
+            <span className="text-sm text-foreground/56">
+              {visibleTransactions.length > 0
+                ? t(`最近 ${visibleTransactions.length} 筆`, `${visibleTransactions.length} recent`)
+                : t("尚無紀錄", "No records yet")}
+            </span>
           </div>
-          {ledger.transactions.length > 0 ? (
+          {visibleTransactions.length > 0 ? (
             <div className="mt-4 grid gap-3">
-              {ledger.transactions.map((entry) => (
+              {visibleTransactions.map((entry) => (
                 <TransactionItem key={entry.id} entry={entry} inlineText={inlineText} />
               ))}
             </div>
           ) : (
             <p className="mt-4 text-sm leading-7 text-foreground/62">補點、扣點與每日簽到之後都會顯示在這裡。</p>
           )}
+          {hiddenTransactionCount > 0 ? (
+            <p className="mt-4 text-sm leading-6 text-foreground/52">
+              {t(
+                `還有 ${hiddenTransactionCount} 筆較早紀錄，之後可以再往下補強成更完整的帳務檢視。`,
+                `${hiddenTransactionCount} older entries are hidden for now.`,
+              )}
+            </p>
+          ) : null}
         </section>
       ) : null}
 
