@@ -177,7 +177,7 @@ function TransactionItem({
 
 export function PointsScreen(props: PointsScreenProps) {
   const router = useRouter();
-  const { inlineText } = useLocale();
+  const { inlineText, t } = useLocale();
   const [ledger, setLedger] = useState(props.initialLedger);
   const [payment, setPayment] = useState(props.initialPayment);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -231,7 +231,7 @@ export function PointsScreen(props: PointsScreenProps) {
     ? canReturnToFlow
       ? `點數已經足夠，回到這次${intentLabel}`
       : `先補齊這次${intentLabel}需要的點數`
-    : "管理你的點數、補點與使用紀錄";
+    : "查看點數與補點";
 
   useEffect(() => {
     if (payment.surface !== "settling" || !payment.order) return;
@@ -394,7 +394,7 @@ export function PointsScreen(props: PointsScreenProps) {
             ? canReturnToFlow
               ? "點數一到帳，我們就會把你帶回原本的流程，不需要重來。"
               : `這一步只差點數。補齊後就能回到這次${intentLabel}。`
-            : "你的補點、扣點、每日簽到與近期餘額變化，都會集中留在這裡。"}
+            : "先看目前餘額，再決定要不要補點。"}
         </p>
       </div>
 
@@ -556,8 +556,8 @@ export function PointsScreen(props: PointsScreenProps) {
           <Link href={props.intent ? props.returnTo : "/"} className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]">
             {props.intent ? "回到剛才流程" : "返回首頁"}
           </Link>
-          <Link href={props.intent ? "/history" : "/question"} className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92">
-            {props.intent ? "先看歷史紀錄" : "開始新的提問"}
+          <Link href="/question" className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-center text-sm font-semibold text-black transition hover:opacity-92">
+            {t("開始新的提問", "Start a new question")}
           </Link>
         </div>
       ) : null}

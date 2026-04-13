@@ -133,13 +133,15 @@ export function LineEntryScreen(props: {
     <section className="flex flex-1 flex-col justify-between gap-8 py-6">
       <div className="space-y-6 pt-6">
         <div className="space-y-3">
-          <p className="text-sm text-foreground/56">{t("登入", "Sign in")}</p>
-          <h1 className="max-w-[13rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
+            {t("登入", "SIGN IN")}
+          </span>
+          <h1 className="max-w-[14rem] text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
             {isAuthenticated
               ? t("已完成登入", "You're signed in")
               : t("先登入再開始", "Sign in first")}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
             {isAuthenticated
               ? displayName
                 ? t(
@@ -148,8 +150,8 @@ export function LineEntryScreen(props: {
                   )
                 : t("你的帳戶已連結到目前流程。", "Your account is connected.")
               : t(
-                  "登入後即可開始、保存歷史紀錄，並保留點數與邀請進度。",
-                  "Sign in to begin, save history, and keep your points and invite progress.",
+                  "登入後即可開始解讀，並保留點數與邀請進度。",
+                  "Sign in to begin and keep your points and invite progress.",
                 )}
           </p>
         </div>
@@ -172,13 +174,15 @@ export function LineEntryScreen(props: {
               : t("開始新的解讀", "Start")}
           </Link>
 
-          <button
-            type="button"
-            onClick={handleStartFresh}
-            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-          >
-            {t("重新開始", "Start over")}
-          </button>
+          {hasCurrentReading ? (
+            <button
+              type="button"
+              onClick={handleStartFresh}
+              className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
+            >
+              {t("重新開始", "Start over")}
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -218,13 +222,6 @@ export function LineEntryScreen(props: {
               {t("使用 Google 繼續", "Continue with Google")}
             </button>
           ) : null}
-
-          <Link
-            href="/"
-            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-black/18 px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-          >
-            {t("返回首頁", "Back to home")}
-          </Link>
 
           {!hasAnyProvider ? (
             <p className="text-sm leading-6 text-foreground/50">

@@ -89,12 +89,14 @@ export function InviteScreen(props: { surface: InviteSurface }) {
 
   return (
     <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-3 pt-4">
-        <p className="text-sm text-foreground/56">{t("邀請", "Invite")}</p>
-        <h1 className="max-w-[13rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-          {t("先把連結送出去", "Send this first")}
+      <div className="space-y-4 pt-6">
+        <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
+          {t("邀請回饋", "INVITE")}
+        </span>
+        <h1 className="max-w-[14rem] text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          {t("把連結送出去，就夠了", "Send the link")}
         </h1>
-        <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+        <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
           {t(
             `每成功邀請一位新讀者完成開始流程，你就會拿回 ${surface.rewardPerInvite} 點。`,
             `Each successful invite returns ${surface.rewardPerInvite} points to your balance.`,
@@ -106,20 +108,20 @@ export function InviteScreen(props: { surface: InviteSurface }) {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <span className="inline-flex rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
-              {t("先分享", "Share first")}
+              {t("分享連結", "Share first")}
             </span>
             <h2 className="max-w-[15rem] text-[1.95rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-              {t("先分享，再回來看成果", "Share before checking stats")}
+              {t("這一頁最重要的動作，就是先分享", "The main action here is to share")}
             </h2>
             <p className="max-w-[18rem] text-sm leading-7 text-foreground/64">
               {latestReward
                 ? t(
-                    `你最近一次的邀請回饋來自 ${inlineText(latestReward.inviteeName)}。現在最值得做的下一步，還是再把這份連結送出去。`,
-                    `Your latest reward came from ${inlineText(latestReward.inviteeName)}. For this visit, the best next step is to share again.`,
+                    `最近一次回饋來自 ${inlineText(latestReward.inviteeName)}。下一步還是繼續把這份連結送出去。`,
+                    `Your latest reward came from ${inlineText(latestReward.inviteeName)}. The next step is still to share again.`,
                   )
                 : t(
-                    "這一頁最重要的動作不是看數字，而是先把邀請連結傳出去。",
-                    "The most important move here is to send the link and message first.",
+                    "先把邀請連結送出去，比先看數字更重要。",
+                    "Sending the link matters more than checking the numbers first.",
                   )}
             </p>
           </div>
@@ -158,15 +160,6 @@ export function InviteScreen(props: { surface: InviteSurface }) {
             className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
           >
             {t("複製分享文案", "Copy share message")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void handleCopyLink();
-            }}
-            className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-black/18 px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.05]"
-          >
-            {t("複製邀請連結", "Copy invite link")}
           </button>
         </div>
 
@@ -215,8 +208,8 @@ export function InviteScreen(props: { surface: InviteSurface }) {
             </p>
             <h2 className="text-lg font-semibold text-card-foreground">
               {t(
-                "分享完成後，回饋點數會結算在這裡",
-                "Rewards settle here after sharing",
+                "分享之後，回饋會在這裡更新",
+                "Rewards update here after sharing",
               )}
             </h2>
           </div>
@@ -254,11 +247,11 @@ export function InviteScreen(props: { surface: InviteSurface }) {
             <h3 className="text-lg font-semibold text-card-foreground">
               {surface.recentProgress.length > 0
                 ? t(
-                    "最近的邀請回饋已經入帳",
+                    "最近的回饋已經入帳",
                     "Recent rewards already settled",
                   )
                 : t(
-                    "只要有人透過你的連結開始使用，回饋就會顯示在這裡",
+                    "有人透過你的連結開始使用後，回饋就會顯示在這裡",
                     "Rewards appear here once someone starts through your link",
                   )}
             </h3>
@@ -320,7 +313,7 @@ export function InviteScreen(props: { surface: InviteSurface }) {
           href="/question"
           className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
         >
-          {t("開始新的解讀", "Start a new reading")}
+          {t("開始新的提問", "Start a new question")}
         </Link>
       </div>
     </section>
