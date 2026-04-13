@@ -138,10 +138,8 @@ function mapTransactionToLedgerEntry(
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
-      detailHref: record.readingCharge?.id
-        ? `/history/${record.readingCharge.id}`
-        : null,
-      detailLabel: record.readingCharge?.id ? "打開這份解讀" : null,
+      detailHref: null,
+      detailLabel: null,
     };
   }
 
@@ -161,12 +159,8 @@ function mapTransactionToLedgerEntry(
       createdAt: record.createdAt.toISOString(),
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
-      detailHref: record.followupCharge?.readingRecordId
-        ? `/history/${record.followupCharge.readingRecordId}`
-        : null,
-      detailLabel: record.followupCharge?.readingRecordId
-        ? "回到這份解讀"
-        : null,
+      detailHref: null,
+      detailLabel: null,
     };
   }
 

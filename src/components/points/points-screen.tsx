@@ -205,12 +205,12 @@ export function PointsScreen(props: PointsScreenProps) {
     ? ledger.followupCostPoints
     : ledger.readingCostPoints;
   const recommendedPackageId = useMemo(() => {
-    const target = props.intent ? actionCost : ledger.followupCostPoints;
+    const target = props.intent ? actionCost : ledger.readingCostPoints;
     return (
       ledger.packages.find((item) => ledger.points + item.points >= target)?.id ??
       ledger.packages[0]?.id
     );
-  }, [actionCost, ledger.followupCostPoints, ledger.packages, ledger.points, props.intent]);
+  }, [actionCost, ledger.packages, ledger.points, ledger.readingCostPoints, props.intent]);
   const recommendedPackage =
     ledger.packages.find((item) => item.id === recommendedPackageId) ?? null;
   const hasClaimedToday = ledger.dailyCheckIn.status === "claimed";
@@ -476,8 +476,10 @@ export function PointsScreen(props: PointsScreenProps) {
         <div className="mt-4 grid grid-cols-2 gap-3">
           {[
             ["目前可用", `${ledger.points} 點`],
-            [props.intent ? `這次${intentLabel}成本` : "主解讀成本", `${props.intent ? actionCost : ledger.readingCostPoints} 點`],
-            ["追問成本", `${ledger.followupCostPoints} 點`],
+            [
+              props.intent ? `這次${intentLabel}成本` : "主解讀成本",
+              `${props.intent ? actionCost : ledger.readingCostPoints} 點`,
+            ],
             ["每日簽到", `+${ledger.dailyCheckIn.rewardPoints} 點`],
           ].map(([label, value]) => (
             <div key={label} className={metricClass}>
