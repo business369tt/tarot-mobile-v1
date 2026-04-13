@@ -68,17 +68,6 @@ function getStatusLabel(
   return t("生成中", "Generating");
 }
 
-function getReadingModelLine(
-  record: ReadingRecord | null,
-  t: (zh: string, en: string) => string,
-) {
-  if (!record) {
-    return t("AI 深度解讀", "AI reading");
-  }
-
-  return `MiniMax · ${record.model}`;
-}
-
 export function ReadingScreen() {
   const router = useRouter();
   const { inlineText, locale, t } = useLocale();
@@ -118,15 +107,14 @@ export function ReadingScreen() {
   const { status, record, errorMessage, pointsState } = state;
   const activeReading = record?.fullReading ?? null;
   const statusLabel = getStatusLabel(status, t);
-  const modelLine = getReadingModelLine(record, t);
   const heroTitle =
     status === "ready"
-      ? activeReading?.reportTitle || t("你的 AI 深度解讀", "Your AI reading")
+      ? activeReading?.reportTitle || t("這次答案", "This reading")
       : status === "needs_points"
-        ? t("補入點數後，就能展開完整答案", "Add points to open the full answer")
+        ? t("補點後開啟完整答案", "Add points to open the full answer")
         : status === "failed"
-          ? t("這次解讀沒有完整落下", "This reading did not fully settle")
-          : t("AI 正在整理這次三張牌", "Your AI reading is being prepared");
+          ? t("這次答案暫時沒有完整落下", "This reading did not fully settle")
+          : t("AI 正在整理這次答案", "Your AI reading is being prepared");
   const heroSubtitle =
     status === "ready"
       ? activeReading?.reportSubtitle ||
@@ -172,19 +160,19 @@ export function ReadingScreen() {
           {
             id: "threshold",
             eyebrow: t("現況核心", "Current core"),
-            title: t("第一張牌先指出現在真正卡住或正在成形的重點", "The current core"),
+            title: t("現在真正的重點", "The current core"),
             body: activeReading.cardReadings.threshold,
           },
           {
             id: "mirror",
             eyebrow: t("隱藏阻力", "Hidden resistance"),
-            title: t("第二張牌揭開真正拖慢你的地方", "The hidden resistance"),
+            title: t("你還沒正視的阻力", "The hidden resistance"),
             body: activeReading.cardReadings.mirror,
           },
           {
             id: "horizon",
             eyebrow: t("最佳走向", "Best direction"),
-            title: t("第三張牌把答案帶往接下來最值得走的方向", "The best direction"),
+            title: t("接下來最值得走的方向", "The best direction"),
             body: activeReading.cardReadings.horizon,
           },
         ].filter((section) => section.body.trim().length > 0)
@@ -193,6 +181,12 @@ export function ReadingScreen() {
     status === "ready"
       ? activeReading?.nearTermTrend || activeReading?.progression || null
       : null;
+  const readySummary =
+    status === "ready"
+      ? heroInsight || activeReading?.reportSubtitle || activeReading?.questionCore || null
+      : null;
+  const closingNote =
+    status === "ready" ? activeReading?.closingReminder?.trim() || null : null;
 
   async function runGenerateReading(
     force = false,
@@ -385,24 +379,23 @@ export function ReadingScreen() {
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-4 pt-3">
+    <section className="flex flex-1 flex-col gap-4 py-6">
+      <div className="space-y-3 pt-4">
         <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
-          {t("答案已展開", "READING REPORT")}
+          {t("完整解讀", "READING")}
         </span>
-        <div className="space-y-3">
-          <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+        <div className="space-y-2">
+          <h1 className="max-w-[14rem] text-[2.65rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
             {status === "ready"
-              ? t("現在就讀這次答案", "Read this answer now")
-              : status === "needs_points"
-                ? t("還差一步就能打開答案", "One more step to open it")
-                : status === "failed"
-                  ? t("這次解讀沒有完整落下", "This reading did not finish")
-                  : t("AI 正在整理這次答案", "Your AI reading is forming")}
+              ? t("這次答案", "This reading")
+              : heroTitle}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
             {status === "ready"
-              ? t("先看整體結論，再往下讀每張牌與後續行動。", "Start with the main signal, then read the full detail.")
+              ? t(
+                  "一頁看完核心結論、三張牌位置與最後建議。",
+                  "One page for the core answer, card positions, and final guidance.",
+                )
               : heroSubtitle}
           </p>
         </div>
@@ -414,96 +407,89 @@ export function ReadingScreen() {
         <div className="pointer-events-none absolute left-[8%] top-[26%] h-36 w-36 rounded-full border border-white/6 opacity-60" />
 
         <div className="relative">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
-                  {t("AI 深度解讀", "AI Reading")}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-foreground/56">
-                  {categoryLabel}
-                </span>
-                <span className="text-xs text-foreground/52">{modelLine}</span>
-              </div>
-              <h2 className="max-w-[16rem] text-[2rem] font-semibold leading-[1.04] tracking-tight text-card-foreground">
-                {heroTitle}
-              </h2>
-            </div>
-
-            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
-              {statusLabel}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/56">
+              {categoryLabel}
             </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-foreground/56">
+              {spreadName}
+            </span>
+            {status !== "ready" ? (
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/68">
+                {statusLabel}
+              </span>
+            ) : null}
           </div>
 
-          <p className="mt-4 max-w-[18rem] text-sm leading-7 text-foreground/72">
+          <h2 className="mt-4 max-w-[17rem] text-[2.15rem] font-semibold leading-[1.04] tracking-tight text-card-foreground">
+            {heroTitle}
+          </h2>
+
+          <p className="mt-3 max-w-[20rem] text-sm leading-7 text-foreground/72">
             {heroSubtitle}
           </p>
 
           <div className="mt-5 rounded-[1.6rem] border border-[#f0cb97]/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/44">
               {status === "ready"
-                ? t("先把答案直接說清楚", "The direct answer")
+                ? t("核心結論", "Core answer")
                 : t("這次提問", "This question")}
             </p>
-            <p className="mt-3 text-sm leading-7 text-card-foreground">
-              {status === "ready" && heroInsight ? heroInsight : `“${focusQuestion}”`}
+            <p className="mt-3 text-base leading-8 text-card-foreground">
+              {status === "ready" && readySummary ? readySummary : `“${focusQuestion}”`}
             </p>
 
             {status === "ready" ? (
-              <>
-                <p className="mt-4 text-sm leading-6 text-foreground/52">
-                  &ldquo;{focusQuestion}&rdquo;
-                </p>
-              </>
+              <p className="mt-4 text-sm leading-6 text-foreground/52">
+                &ldquo;{focusQuestion}&rdquo;
+              </p>
             ) : (
               <p className="mt-4 text-sm text-foreground/56">
-                {t(`牌陣：${spreadName}`, `Spread: ${spreadName}`)}
+                {t(
+                  "直答三張牌會直接回到你現在最在意的重點。",
+                  "This three-card spread goes straight to what matters most right now.",
+                )}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-card-foreground">
-            {t("這副直答三張牌正在回答什麼", "What this spread is answering")}
-          </h3>
-          <p className="text-sm leading-6 text-foreground/56">
-            {t(
-              "先看三張牌各自站在哪裡，再往下讀完整敘述與建議。",
-              "See the three positions first, then continue into the full reading.",
-            )}
-          </p>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          {cardSpotlights.map((item) => (
-            <div key={item.id} className="space-y-3">
-              <TarotCardFace
-                card={item.card}
-                variant="compact"
-                showNarrative={false}
-              />
-              <div className="rounded-[1.2rem] border border-white/10 bg-black/18 px-3 py-3">
-                <p className="text-xs font-semibold text-card-foreground">
-                  {item.roleLabel}
-                </p>
-                <p className="mt-2 text-[11px] leading-5 text-foreground/56">
-                  {item.name}・{item.orientation}
-                </p>
-                <p className="mt-2 text-[11px] leading-5 text-foreground/42">
-                  {item.roleSubtitle}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {status === "ready" ? (
         <>
-          <div className="grid gap-4">
+          <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
+            <div className="space-y-2">
+              <p className="text-sm text-foreground/56">{t("三張牌", "Three cards")}</p>
+              <h3 className="text-xl font-semibold text-card-foreground">
+                {t("答案是怎麼被說清楚的", "How the answer is formed")}
+              </h3>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {cardSpotlights.map((item) => (
+                <div key={item.id} className="space-y-3">
+                  <TarotCardFace
+                    card={item.card}
+                    variant="compact"
+                    showNarrative={false}
+                  />
+                  <div className="rounded-[1.2rem] border border-white/10 bg-black/18 px-3 py-3">
+                    <p className="text-xs font-semibold text-card-foreground">
+                      {item.roleLabel}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-5 text-foreground/56">
+                      {item.name}・{item.orientation}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-5 text-foreground/42">
+                      {item.roleSubtitle}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3">
             {reportSections.map((section, index) => (
               <article
                 key={section.id}
@@ -524,38 +510,39 @@ export function ReadingScreen() {
             ))}
           </div>
 
-          {outlookBody ? (
-            <section className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5">
-              <p className="text-sm text-foreground/56">
-                {t("近期結果", "Near-term outlook")}
-              </p>
-              <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
-                {t("接下來一到四週，局勢最可能怎麼變", "What is most likely to shift next")}
+          <section className="rounded-[1.9rem] border border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
+            <div className="space-y-2">
+              <p className="text-sm text-foreground/56">{t("最後提醒", "Final note")}</p>
+              <h3 className="text-xl font-semibold text-card-foreground">
+                {t("把這次答案真正帶進接下來的行動", "Take this answer into your next step")}
               </h3>
-              <p className="mt-4 text-sm leading-8 text-foreground/76">
-                {outlookBody}
+            </div>
+
+            {closingNote ? (
+              <p className="mt-4 text-sm leading-8 text-card-foreground">
+                {closingNote}
               </p>
-            </section>
-          ) : null}
+            ) : null}
 
-          {guidanceSteps.length > 0 ? (
-            <section className="rounded-[1.85rem] border border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5">
-              <div className="space-y-2">
-                <p className="text-sm text-foreground/56">
-                  {t("關鍵建議", "Key guidance")}
+            {outlookBody ? (
+              <div className="mt-4 rounded-[1.35rem] border border-white/10 bg-black/18 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/44">
+                  {t("近期結果", "Near-term outlook")}
                 </p>
-                <h3 className="text-xl font-semibold leading-8 text-card-foreground">
-                  {t("這次最值得立刻做的三步", "The three actions worth taking now")}
-                </h3>
+                <p className="mt-3 text-sm leading-7 text-card-foreground">
+                  {outlookBody}
+                </p>
               </div>
+            ) : null}
 
-              <div className="mt-5 grid gap-3">
+            {guidanceSteps.length > 0 ? (
+              <div className="mt-4 grid gap-3">
                 {guidanceSteps.map((step, index) => (
                   <div
                     key={`${index + 1}-${step}`}
                     className="flex gap-4 rounded-[1.3rem] border border-white/10 bg-black/18 px-4 py-4"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 text-sm font-semibold text-[#f3d4a7]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 text-sm font-semibold text-[#f3d4a7]">
                       {String(index + 1).padStart(2, "0")}
                     </div>
                     <p className="text-sm leading-7 text-card-foreground">
@@ -564,8 +551,24 @@ export function ReadingScreen() {
                   </div>
                 ))}
               </div>
-            </section>
-          ) : null}
+            ) : null}
+
+            <div className="mt-5 grid gap-3">
+              <button
+                type="button"
+                onClick={handleStartAgain}
+                className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92"
+              >
+                {t("開始下一個問題", "Start the next question")}
+              </button>
+              <Link
+                href="/"
+                className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+              >
+                {t("返回首頁", "Back to home")}
+              </Link>
+            </div>
+          </section>
         </>
       ) : (
         <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5">
@@ -628,43 +631,18 @@ export function ReadingScreen() {
                   {t("回到牌陣", "Back to reveal")}
                 </Link>
               </>
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartAgain}
+                className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+              >
+                {t("改問新的問題", "Start a new question")}
+              </button>
+            )}
           </div>
         </div>
       )}
-
-      <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5">
-        <h3 className="text-lg font-semibold text-card-foreground">
-          {t("接下來", "Next")}
-        </h3>
-        <p className="mt-3 text-sm leading-7 text-foreground/62">
-          {status === "ready"
-            ? activeReading?.closingReminder ||
-              t(
-                "這份完整解讀已經整理好，帶著答案往下走，或直接開啟下一個問題。",
-                "Your complete reading is ready. Move forward with it or begin the next question.",
-              )
-            : t(
-                "等解讀完成後，你就能直接從這裡開始下一題。",
-                "Once the reading is ready, you can begin the next question from here.",
-              )}
-        </p>
-        <div className="mt-5 grid gap-3">
-          <button
-            type="button"
-            onClick={handleStartAgain}
-            className="min-h-[3.5rem] rounded-[1.35rem] bg-white px-4 py-4 text-sm font-semibold text-black transition hover:opacity-92"
-          >
-            {t("開始新的解讀", "Start a new reading")}
-          </button>
-          <Link
-            href="/"
-            className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
-          >
-            {t("返回首頁", "Back to home")}
-          </Link>
-        </div>
-      </div>
     </section>
   );
 }
