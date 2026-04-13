@@ -204,7 +204,7 @@ function mapTransactionToLedgerEntry(
       createdLabel: pointsDateFormatter.format(record.createdAt),
       direction,
       detailHref: "/invite",
-      detailLabel: "查看邀請紀錄",
+      detailLabel: "查看邀請回饋",
     };
   }
 

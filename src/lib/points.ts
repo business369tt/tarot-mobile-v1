@@ -79,9 +79,9 @@ export const pointPackages: PointPackage[] = [
   {
     id: "reading-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_PRIMARY, 5),
-    label: "三次解讀補點包",
+    label: "完整解讀補點包",
     caption:
-      "適合先完成一輪主解讀，再多追問一到兩次，讓同一條問題線先看清楚。",
+      "適合先完成這次完整解讀，也替下一個問題保留一點餘裕。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_PRIMARY_AMOUNT_MINOR,
       19000,
@@ -95,9 +95,9 @@ export const pointPackages: PointPackage[] = [
   {
     id: "extended-topup",
     points: parsePositiveInt(process.env.POINTS_PACKAGE_SECONDARY, 12),
-    label: "長線陪跑補點包",
+    label: "安心餘裕補點包",
     caption:
-      "給想保留更多餘裕的人，適合連續追問、回看紀錄，讓同一份解讀慢慢展開。",
+      "給想保留更多餘裕的人，適合連續完成幾次完整解讀，不用每次都重新補點。",
     amountMinor: parsePositiveInt(
       process.env.POINTS_PACKAGE_SECONDARY_AMOUNT_MINOR,
       39000,
