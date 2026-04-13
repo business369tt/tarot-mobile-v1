@@ -9,20 +9,20 @@ const spreadPoints = [
   {
     zhTitle: "現況核心",
     enTitle: "Core reality",
-    zhBody: "先看清現在最重要的主軸，知道問題真正卡在哪裡。",
-    enBody: "See the core of the situation before anything else.",
+    zhBody: "先看清現在最重要的主軸。",
+    enBody: "See the core first.",
   },
   {
     zhTitle: "隱藏阻力",
     enTitle: "Hidden resistance",
-    zhBody: "找出表面之下真正拖住你的情緒、誤解或外在壓力。",
-    enBody: "Find the unseen force slowing things down.",
+    zhBody: "看見真正拖住你的地方。",
+    enBody: "Reveal what slows it down.",
   },
   {
     zhTitle: "最佳走向",
     enTitle: "Best direction",
-    zhBody: "把下一步收斂成更清楚、更可執行的方向。",
-    enBody: "Turn the reading into a clearer next move.",
+    zhBody: "把下一步收成更清楚的方向。",
+    enBody: "Move toward a clearer next step.",
   },
 ] as const;
 
@@ -34,10 +34,6 @@ const readingPromises = [
   {
     zh: "AI 會整合牌義、正逆位與牌位關係，給出更貼近問題的解讀與建議。",
     en: "The AI combines card meaning, orientation, and spread position.",
-  },
-  {
-    zh: "完成後可以繼續追問、補點與回看歷史，讓每次占卜都留下完整脈絡。",
-    en: "You can follow up, top up, and revisit the same reading later.",
   },
 ] as const;
 
@@ -62,20 +58,13 @@ export function HomeScreen() {
     : t("1 個問題，約 1 分鐘完成一次完整解讀", "A full reading in about one minute");
 
   return (
-    <div className="flex flex-col gap-8 pb-12 pt-2">
-      <section className="relative overflow-hidden rounded-[2.7rem] border border-[#f1c98d]/12 bg-[linear-gradient(180deg,#140e0b_0%,#09090e_44%,#05060a_100%)] px-5 pb-8 pt-8 shadow-[0_34px_120px_rgba(0,0,0,0.5)]">
-        <div className="pointer-events-none absolute inset-x-0 top-[-5rem] h-56 bg-[radial-gradient(circle,rgba(242,188,110,0.34),rgba(242,188,110,0.06)_44%,transparent_72%)] blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-[-5%] top-[22%] h-[26rem] rounded-full border border-[#f0cb97]/8 opacity-70 [transform:perspective(1200px)_rotateX(72deg)]" />
-        <div className="pointer-events-none absolute inset-x-[8%] top-[28%] h-[22rem] rounded-full border border-[#f0cb97]/10 opacity-85 [transform:perspective(1200px)_rotateX(72deg)]" />
-        <div className="pointer-events-none absolute inset-x-[20%] top-[34%] h-[18rem] rounded-full border border-[#f0cb97]/10 opacity-80 [transform:perspective(1200px)_rotateX(72deg)]" />
-        <div className="pointer-events-none absolute left-[-8%] top-[8%] h-64 w-64 rounded-full border border-[#f0cb97]/8 opacity-45" />
-        <div className="pointer-events-none absolute right-[-10%] top-[12%] h-72 w-72 rounded-full border border-[#f0cb97]/8 opacity-35" />
-        <div className="pointer-events-none absolute left-[9%] top-[16%] h-1.5 w-1.5 rounded-full bg-[#f4d59f] opacity-80 shadow-[0_0_18px_rgba(244,213,159,0.9)]" />
-        <div className="pointer-events-none absolute left-[18%] top-[30%] h-1 w-1 rounded-full bg-[#f4d59f] opacity-70 shadow-[0_0_18px_rgba(244,213,159,0.85)]" />
-        <div className="pointer-events-none absolute right-[18%] top-[18%] h-1.5 w-1.5 rounded-full bg-[#f4d59f] opacity-85 shadow-[0_0_18px_rgba(244,213,159,0.9)]" />
-        <div className="pointer-events-none absolute right-[12%] top-[44%] h-1 w-1 rounded-full bg-[#f4d59f] opacity-65 shadow-[0_0_18px_rgba(244,213,159,0.85)]" />
-        <div className="pointer-events-none absolute left-[14%] bottom-[20%] h-1.5 w-1.5 rounded-full bg-[#f4d59f] opacity-75 shadow-[0_0_18px_rgba(244,213,159,0.88)]" />
-        <div className="pointer-events-none absolute right-[22%] bottom-[16%] h-1 w-1 rounded-full bg-[#f4d59f] opacity-65 shadow-[0_0_18px_rgba(244,213,159,0.82)]" />
+    <div className="flex flex-col gap-6 pb-12 pt-4">
+      <section className="relative overflow-hidden rounded-[2.7rem] border border-[#f1c98d]/12 bg-[linear-gradient(180deg,#120d0a_0%,#09090d_48%,#05060a_100%)] px-5 pb-8 pt-8 shadow-[0_34px_120px_rgba(0,0,0,0.48)]">
+        <div className="pointer-events-none absolute inset-x-0 top-[-5rem] h-56 bg-[radial-gradient(circle,rgba(242,188,110,0.26),rgba(242,188,110,0.04)_44%,transparent_72%)] blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-[8%] top-[28%] h-[22rem] rounded-full border border-[#f0cb97]/8 opacity-75 [transform:perspective(1200px)_rotateX(72deg)]" />
+        <div className="pointer-events-none absolute inset-x-[20%] top-[34%] h-[18rem] rounded-full border border-[#f0cb97]/10 opacity-70 [transform:perspective(1200px)_rotateX(72deg)]" />
+        <div className="pointer-events-none absolute left-[12%] top-[18%] h-1 w-1 rounded-full bg-[#f4d59f] opacity-75 shadow-[0_0_16px_rgba(244,213,159,0.7)]" />
+        <div className="pointer-events-none absolute right-[18%] top-[24%] h-1 w-1 rounded-full bg-[#f4d59f] opacity-72 shadow-[0_0_16px_rgba(244,213,159,0.7)]" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
           <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
@@ -83,7 +72,7 @@ export function HomeScreen() {
           </span>
 
           <div className="mt-5 max-w-[18.5rem] space-y-4">
-            <h1 className="font-display text-[2.9rem] leading-[0.95] tracking-[-0.05em] text-card-foreground">
+            <h1 className="font-display text-[2.8rem] leading-[0.96] tracking-[-0.05em] text-card-foreground">
               {t(
                 "讓問題更快變清楚\n從這三張牌開始",
                 "Make the question clearer with three cards",
@@ -107,18 +96,9 @@ export function HomeScreen() {
             <p className="text-sm font-medium leading-6 text-[#f4dfbf]/76">
               {heroNote}
             </p>
-            {isAuthenticated ? (
-              <Link
-                href="/history"
-                className="inline-flex items-center gap-2 text-sm font-medium text-foreground/56 transition hover:text-foreground"
-              >
-                <span>{t("查看我的解讀紀錄", "View my archive")}</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            ) : null}
           </div>
 
-          <div className="relative mt-12 flex h-[18rem] w-full max-w-[18.5rem] items-end justify-center">
+          <div className="relative mt-12 flex h-[17rem] w-full max-w-[18rem] items-end justify-center">
             <div className="pointer-events-none absolute inset-x-0 bottom-8 h-28 rounded-[999px] border border-[#f0cb97]/24 opacity-75 [transform:perspective(1200px)_rotateX(74deg)]" />
             <div className="pointer-events-none absolute inset-x-6 bottom-11 h-24 rounded-[999px] border border-[#f0cb97]/20 opacity-82 [transform:perspective(1200px)_rotateX(74deg)]" />
             <div className="pointer-events-none absolute inset-x-12 bottom-14 h-20 rounded-[999px] border border-[#f0cb97]/18 opacity-82 [transform:perspective(1200px)_rotateX(74deg)]" />
@@ -134,44 +114,33 @@ export function HomeScreen() {
               <TarotBackCard accent="soft" />
             </div>
           </div>
-
-          <div className="mt-6 grid w-full grid-cols-3 gap-2 text-center">
-            {spreadPoints.map((point) => (
-              <div key={point.zhTitle} className="space-y-1">
-                <p className="text-[1.02rem] font-semibold text-[#f0cb97]">
-                  {t(point.zhTitle, point.enTitle)}
-                </p>
-                <p className="text-xs leading-5 text-foreground/56">
-                  {t(point.zhBody, point.enBody)}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-5 py-6 backdrop-blur-sm">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-foreground/46">{t("AI 解讀", "AI reading")}</p>
-            <h2 className="text-[1.5rem] font-semibold tracking-tight text-card-foreground">
-              {t("不是只抽牌，而是把答案說得更清楚", "More than a draw")}
-            </h2>
+      <section className="grid grid-cols-3 gap-2">
+        {spreadPoints.map((point) => (
+          <div
+            key={point.zhTitle}
+            className="rounded-[1.35rem] border border-white/8 bg-white/[0.04] px-3 py-4 text-center"
+          >
+            <p className="text-[0.98rem] font-semibold text-card-foreground">
+              {t(point.zhTitle, point.enTitle)}
+            </p>
+            <p className="mt-2 text-[11px] leading-5 text-foreground/56">
+              {t(point.zhBody, point.enBody)}
+            </p>
           </div>
+        ))}
+      </section>
 
-          <div className="space-y-3">
-            {readingPromises.map((item) => (
-              <div
-                key={item.zh}
-                className="flex items-start gap-3 border-b border-white/6 pb-3 last:border-b-0 last:pb-0"
-              >
-                <span className="mt-1.5 h-2 w-2 rounded-full bg-[#f0cb97]" />
-                <p className="text-sm leading-6 text-card-foreground">
-                  {t(item.zh, item.en)}
-                </p>
-              </div>
-            ))}
-          </div>
+      <section className="rounded-[1.9rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-5 py-5 backdrop-blur-sm">
+        <div className="space-y-3">
+          <p className="text-sm text-foreground/46">{t("AI 解讀", "AI reading")}</p>
+          {readingPromises.map((item) => (
+            <p key={item.zh} className="text-sm leading-6 text-card-foreground">
+              {t(item.zh, item.en)}
+            </p>
+          ))}
         </div>
       </section>
     </div>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useEffectEvent, useState } from "react";
-import { ReadingFollowupPanel } from "@/components/flow/reading-followup-panel";
 import { TarotCardFace } from "@/components/flow/tarot-card";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -16,7 +15,6 @@ import {
   getOrientationDisplayMeta,
 } from "@/lib/mock-tarot-data";
 import {
-  buildReadingSections,
   readingFailureMessage,
   readingNeedsRevealMessage,
   type ReadingRecord,
@@ -107,10 +105,6 @@ export function ReadingScreen() {
     errorMessage: null,
     pointsState: null,
   });
-  const [readingDetailState, setReadingDetailState] = useState({
-    sessionId,
-    expanded: false,
-  });
   const state =
     viewState.sessionId === sessionId
       ? viewState
@@ -122,14 +116,7 @@ export function ReadingScreen() {
           pointsState: null,
         };
   const { status, record, errorMessage, pointsState } = state;
-  const showFullReading =
-    readingDetailState.sessionId === sessionId
-      ? readingDetailState.expanded
-      : false;
   const activeReading = record?.fullReading ?? null;
-  const readingSections = record ? buildReadingSections(record) : [];
-  const supportingSections = readingSections.filter((section) => section.id !== "core");
-  const narrativeSections = supportingSections.filter((section) => section.id !== "guidance");
   const statusLabel = getStatusLabel(status, t);
   const modelLine = getReadingModelLine(record, t);
   const heroTitle =
@@ -155,17 +142,6 @@ export function ReadingScreen() {
     status === "ready"
       ? activeReading?.questionCore || activeReading?.progression || null
       : null;
-  const heroSupportLine =
-    status === "ready"
-      ? activeReading?.progression || activeReading?.nearTermTrend || null
-      : null;
-  const visibleDetailSections = showFullReading
-    ? narrativeSections
-    : narrativeSections.slice(0, 4);
-  const hiddenSectionsCount = Math.max(
-    narrativeSections.length - visibleDetailSections.length,
-    0,
-  );
   const categoryLabel =
     locale === "zh-TW" ? categoryDisplay.labelZh : categoryDisplay.labelEn;
   const guidanceSteps =
@@ -190,25 +166,33 @@ export function ReadingScreen() {
       card,
     };
   });
-  const summaryPanels =
-    status === "ready"
+  const reportSections =
+    status === "ready" && activeReading
       ? [
           {
-            id: "constellation",
-            eyebrow: t("三張牌怎麼一起說話", "How the cards speak together"),
-            title: t("這副直答三張牌如何把答案扣成一條線", "How this spread locks into one line"),
-            body:
-              activeReading?.constellationLine || activeReading?.spreadAxis || "",
+            id: "threshold",
+            eyebrow: t("現況核心", "Current core"),
+            title: t("第一張牌先指出現在真正卡住或正在成形的重點", "The current core"),
+            body: activeReading.cardReadings.threshold,
           },
           {
-            id: "progression",
-            eyebrow: t("接下來怎麼推進", "What moves next"),
-            title: t("這題未來一到四週最值得關注的變化", "The next one to four weeks"),
-            body:
-              activeReading?.progression || activeReading?.nearTermTrend || "",
+            id: "mirror",
+            eyebrow: t("隱藏阻力", "Hidden resistance"),
+            title: t("第二張牌揭開真正拖慢你的地方", "The hidden resistance"),
+            body: activeReading.cardReadings.mirror,
           },
-        ].filter((panel) => panel.body.trim().length > 0)
+          {
+            id: "horizon",
+            eyebrow: t("最佳走向", "Best direction"),
+            title: t("第三張牌把答案帶往接下來最值得走的方向", "The best direction"),
+            body: activeReading.cardReadings.horizon,
+          },
+        ].filter((section) => section.body.trim().length > 0)
       : [];
+  const outlookBody =
+    status === "ready"
+      ? activeReading?.nearTermTrend || activeReading?.progression || null
+      : null;
 
   async function runGenerateReading(
     force = false,
@@ -470,11 +454,6 @@ export function ReadingScreen() {
                 <p className="mt-4 text-sm leading-6 text-foreground/52">
                   &ldquo;{focusQuestion}&rdquo;
                 </p>
-                {heroSupportLine ? (
-                  <p className="mt-3 text-sm leading-7 text-foreground/72">
-                    {heroSupportLine}
-                  </p>
-                ) : null}
               </>
             ) : (
               <p className="mt-4 text-sm text-foreground/56">
@@ -524,23 +503,39 @@ export function ReadingScreen() {
 
       {status === "ready" ? (
         <>
-          {summaryPanels.length > 0 ? (
-            <div className="grid gap-4">
-              {summaryPanels.map((panel) => (
-                <section
-                  key={panel.id}
-                  className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5"
-                >
-                  <p className="text-sm text-foreground/56">{panel.eyebrow}</p>
-                  <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
-                    {panel.title}
-                  </h3>
-                  <p className="mt-4 text-sm leading-8 text-foreground/76">
-                    {panel.body}
-                  </p>
-                </section>
-              ))}
-            </div>
+          <div className="grid gap-4">
+            {reportSections.map((section, index) => (
+              <article
+                key={section.id}
+                className={`rounded-[1.8rem] border p-5 ${
+                  index === 0
+                    ? "border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))]"
+                    : "border-white/8 bg-white/[0.04]"
+                }`}
+              >
+                <p className="text-sm text-foreground/56">{section.eyebrow}</p>
+                <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
+                  {section.title}
+                </h3>
+                <p className="mt-4 text-sm leading-8 text-foreground/76">
+                  {section.body}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          {outlookBody ? (
+            <section className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5">
+              <p className="text-sm text-foreground/56">
+                {t("近期結果", "Near-term outlook")}
+              </p>
+              <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
+                {t("接下來一到四週，局勢最可能怎麼變", "What is most likely to shift next")}
+              </h3>
+              <p className="mt-4 text-sm leading-8 text-foreground/76">
+                {outlookBody}
+              </p>
+            </section>
           ) : null}
 
           {guidanceSteps.length > 0 ? (
@@ -570,50 +565,6 @@ export function ReadingScreen() {
                 ))}
               </div>
             </section>
-          ) : null}
-
-          <div className="grid gap-4">
-            {visibleDetailSections.map((section, index) => (
-              <article
-                key={section.id}
-                className={`rounded-[1.8rem] border p-5 ${
-                  index === 0
-                    ? "border-[#f0cb97]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))]"
-                    : "border-white/8 bg-white/[0.04]"
-                }`}
-              >
-                <p className="text-sm text-foreground/56">
-                  {inlineText(section.eyebrow)}
-                </p>
-                <h3 className="mt-2 text-xl font-semibold leading-8 text-card-foreground">
-                  {inlineText(section.title)}
-                </h3>
-                <p className="mt-4 text-sm leading-8 text-foreground/76">
-                  {section.body}
-                </p>
-              </article>
-            ))}
-          </div>
-
-          {hiddenSectionsCount > 0 ? (
-            <button
-              type="button"
-              onClick={() =>
-                setReadingDetailState((previous) => ({
-                  sessionId,
-                  expanded:
-                    previous.sessionId === sessionId ? !previous.expanded : true,
-                }))
-              }
-              className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
-            >
-              {showFullReading
-                ? t("先收起細節", "Hide extra detail")
-                : t(
-                    `展開剩下 ${hiddenSectionsCount} 段完整解讀`,
-                    `Show ${hiddenSectionsCount} more sections`,
-                  )}
-            </button>
           ) : null}
         </>
       ) : (
@@ -682,8 +633,6 @@ export function ReadingScreen() {
         </div>
       )}
 
-      <ReadingFollowupPanel canOpen={status === "ready" && Boolean(activeReading)} />
-
       <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5">
         <h3 className="text-lg font-semibold text-card-foreground">
           {t("接下來", "Next")}
@@ -692,12 +641,12 @@ export function ReadingScreen() {
           {status === "ready"
             ? activeReading?.closingReminder ||
               t(
-                "你可以從這裡繼續追問，或把這份解讀留待之後回來閱讀。",
-                "You can continue with follow-ups or return to this reading later.",
+                "這份完整解讀已經整理好，帶著答案往下走，或直接開啟下一個問題。",
+                "Your complete reading is ready. Move forward with it or begin the next question.",
               )
             : t(
-                "等解讀完成後，你就可以決定是否要繼續追問或回到歷史紀錄。",
-                "Once the reading is ready, you can decide whether to continue.",
+                "等解讀完成後，你就能直接從這裡開始下一題。",
+                "Once the reading is ready, you can begin the next question from here.",
               )}
         </p>
         <div className="mt-5 grid gap-3">
@@ -709,10 +658,10 @@ export function ReadingScreen() {
             {t("開始新的解讀", "Start a new reading")}
           </button>
           <Link
-            href={record && session?.saveToHistory ? `/history/${record.id}` : "/history"}
+            href="/"
             className="min-h-[3.5rem] rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-center text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
           >
-            {t("打開我的紀錄", "Open history")}
+            {t("返回首頁", "Back to home")}
           </Link>
         </div>
       </div>

@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useDeferredValue, useState } from "react";
+import { startTransition, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
-import {
-  defaultQuestion,
-  getCategoryDisplayMeta,
-  type TarotCategoryId,
-} from "@/lib/mock-tarot-data";
+import { type TarotCategoryId } from "@/lib/mock-tarot-data";
 
 const sparkPrompts = {
   "zh-TW": [
@@ -24,27 +20,6 @@ const sparkPrompts = {
     "Should I wait a little longer or make the decision now?",
   ],
 } as const;
-
-const entrySignals = [
-  {
-    zhTitle: "一個問題",
-    enTitle: "One question",
-    zhBody: "先把你最想釐清的核心問題說清楚，不需要一次塞進所有背景。",
-    enBody: "Start with one clear question.",
-  },
-  {
-    zhTitle: "直答三張牌",
-    enTitle: "Three cards",
-    zhBody: "用現況核心、隱藏阻力、最佳走向三個位置，把答案先收斂起來。",
-    enBody: "Use three positions to narrow the answer.",
-  },
-  {
-    zhTitle: "約一分鐘",
-    enTitle: "About one minute",
-    zhBody: "提問、進入儀式、抽牌到讀取 AI 解讀，會在同一條流裡完成。",
-    enBody: "Draw, reveal, and read in one flow.",
-  },
-] as const;
 
 const categoryKeywordMap: Array<{
   category: TarotCategoryId;
@@ -118,18 +93,13 @@ export function QuestionScreen() {
     session,
     ownsCurrentSession,
     question,
-    categoryId,
-    saveToHistory,
     setQuestion,
     setCategoryId,
-    setSaveToHistory,
     createSessionFromDraft,
     startNewReading,
   } = useTarotFlow();
-  const previewQuestion = useDeferredValue(question.trim() || defaultQuestion);
   const canContinue = question.trim().length > 0;
   const prompts = sparkPrompts[locale];
-  const categoryDisplay = getCategoryDisplayMeta(categoryId);
 
   function applyQuestion(nextQuestion: string) {
     setQuestion(nextQuestion);
@@ -162,18 +132,18 @@ export function QuestionScreen() {
   if (!isAuthenticated) {
     return (
       <section className="flex flex-1 flex-col justify-between gap-8 py-6">
-        <div className="space-y-4 pt-3">
+        <div className="space-y-4 pt-6">
           <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
             {t("THREE CARD READING", "THREE CARD READING")}
           </span>
           <div className="space-y-3">
-            <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-              {t("登入後，就能開始這次三張牌解讀", "Sign in first")}
+            <h1 className="max-w-[15rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+              {t("先登入，再開始這次三張牌解讀", "Sign in to begin")}
             </h1>
-            <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+            <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
               {t(
-                "登入後才能保留你的提問、點數、主解讀與追問紀錄，之後也能回到同一條答案繼續看。",
-                "Sign in first so your reading, points, and history can be kept.",
+                "登入後才能開始這次占卜、使用點數，並順利完成完整解讀。",
+                "Sign in first to start the reading and use points.",
               )}
             </p>
           </div>
@@ -186,12 +156,6 @@ export function QuestionScreen() {
           >
             {t("使用 LINE 登入", "Continue with LINE")}
           </Link>
-          <Link
-            href="/"
-            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-          >
-            {t("返回首頁", "Back to home")}
-          </Link>
         </div>
       </section>
     );
@@ -200,15 +164,15 @@ export function QuestionScreen() {
   if (session && !ownsCurrentSession) {
     return (
       <section className="flex flex-1 flex-col justify-between gap-8 py-6">
-        <div className="space-y-4 pt-3">
+        <div className="space-y-4 pt-6">
           <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-foreground/60">
             {t("CURRENT SESSION", "CURRENT SESSION")}
           </span>
           <div className="space-y-3">
-            <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-              {t("這裡已經有一條進行中的占卜流程", "Start fresh here")}
+            <h1 className="max-w-[15rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+              {t("先清掉目前流程，再開始新問題", "Clear the current flow first")}
             </h1>
-            <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+            <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
               {t(
                 "這個裝置目前保留了另一份進行中的解讀。先清掉它，再開始新的問題，整條流程會更乾淨。",
                 "This browser already holds a different reading. Clear it first before starting a new one.",
@@ -227,12 +191,6 @@ export function QuestionScreen() {
           >
             {t("清空後重新開始", "Clear and begin")}
           </button>
-          <Link
-            href="/"
-            className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-          >
-            {t("返回首頁", "Back to home")}
-          </Link>
         </div>
       </section>
     );
@@ -261,60 +219,35 @@ export function QuestionScreen() {
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-4 pt-3">
+    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
+      <div className="space-y-4 pt-6">
         <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
           {t("THREE CARD READING", "THREE CARD READING")}
         </span>
         <div className="space-y-3">
-          <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-            {t("先把問題說清楚，再讓三張牌回答你", "Start with one question")}
+          <h1 className="max-w-[15rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+            {t("你現在最想問什麼？", "What do you most want to ask?")}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
             {t(
-              "這次我們只做直答三張牌。你只需要帶著一個清楚問題進來，其他交給儀式、抽牌與 AI 解讀。",
-              "One clear question is enough to begin.",
+              "帶著一個清楚問題進來，系統會直接帶你完成直答三張牌與完整解讀。",
+              "Bring one clear question and we will guide you through the full three-card reading.",
             )}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {entrySignals.map((item) => (
-          <div
-            key={item.zhTitle}
-            className="rounded-[1.35rem] border border-white/8 bg-white/[0.04] px-3 py-4"
-          >
-            <p className="text-sm font-semibold text-card-foreground">
-              {t(item.zhTitle, item.enTitle)}
-            </p>
-            <p className="mt-2 text-[11px] leading-5 text-foreground/56">
-              {t(item.zhBody, item.enBody)}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-card-foreground">
-              {t("把問題收成一句話", "Put it into one sentence")}
-            </h2>
-            <p className="text-sm leading-6 text-foreground/56">
-              {t(
-                "問題越聚焦，後面的三張牌與 AI 解讀就越容易直接回答你，而不是只給你泛泛建議。",
-                "The clearer the question, the stronger the reading.",
-              )}
-            </p>
-          </div>
-
+      <div className="rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-card-foreground">
+            {t("一句話就夠了", "One sentence is enough")}
+          </p>
           <button
             type="button"
             onClick={handleUsePromptSpark}
             className="shrink-0 rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 px-3 py-2 text-xs font-medium text-[#f3d4a7] transition hover:border-[#f0cb97]/30 hover:bg-[#f0cb97]/12"
           >
-            {t("需要靈感", "Need inspiration")}
+            {t("給我靈感", "Need inspiration")}
           </button>
         </div>
 
@@ -326,21 +259,26 @@ export function QuestionScreen() {
             "For example: Should I propose the collaboration this month?",
           )}
           onChange={(event) => applyQuestion(event.target.value)}
-          className="mt-4 h-36 w-full resize-none rounded-[1.45rem] border border-white/10 bg-black/20 px-4 py-4 text-[0.98rem] leading-7 text-card-foreground outline-none transition placeholder:text-muted/70 focus:border-line-strong"
+          className="mt-4 h-44 w-full resize-none rounded-[1.55rem] border border-white/10 bg-black/20 px-4 py-4 text-[1rem] leading-7 text-card-foreground outline-none transition placeholder:text-muted/70 focus:border-line-strong"
         />
 
         <div className="mt-3 flex items-center justify-between gap-4 text-xs text-foreground/46">
-          <p>{t("先聚焦在一個主題上就好", "Keep it focused on one theme")}</p>
+          <p>
+            {t(
+              "系統會自動判斷題目脈絡，並直接進入直答三張牌。",
+              "We will infer the focus and guide you into the three-card spread.",
+            )}
+          </p>
           <p>{question.trim().length}/180</p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 grid gap-2">
           {prompts.map((prompt) => (
             <button
               key={prompt}
               type="button"
               onClick={() => applyQuestion(prompt)}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-xs text-foreground/66 transition hover:border-line-strong hover:text-card-foreground"
+              className="rounded-[1.15rem] border border-white/10 bg-black/18 px-4 py-3 text-left text-sm leading-6 text-foreground/72 transition hover:border-line-strong hover:text-card-foreground"
             >
               {prompt}
             </button>
@@ -348,67 +286,7 @@ export function QuestionScreen() {
         </div>
       </div>
 
-      <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-card-foreground">
-              {t(`這次會聚焦在 ${categoryDisplay.labelZh}`, `Focus: ${categoryDisplay.labelEn}`)}
-            </h2>
-            <p className="text-sm leading-6 text-foreground/56">
-              {t(categoryDisplay.descriptionZh, categoryDisplay.descriptionEn)}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-pressed={saveToHistory}
-            onClick={() => setSaveToHistory(!saveToHistory)}
-            className={`relative mt-1 flex h-8 w-14 items-center rounded-full border transition ${
-              saveToHistory
-                ? "border-line-strong bg-brand-soft"
-                : "border-white/10 bg-black/24"
-            }`}
-          >
-            <span
-              className={`mx-1 block h-5 w-5 rounded-full bg-card-foreground transition ${
-                saveToHistory ? "translate-x-6" : ""
-              }`}
-            />
-          </button>
-        </div>
-
-        <div className="mt-4 rounded-[1.45rem] border border-white/10 bg-black/18 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/42">
-            {t("問題預覽", "Question preview")}
-          </p>
-          <p className="mt-3 text-sm leading-7 text-card-foreground">
-            &ldquo;{previewQuestion}&rdquo;
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-foreground/54">
-            <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5">
-              {t("牌陣：直答三張牌", "Spread: three-card")}
-            </span>
-            <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5">
-              {t(
-                "牌位：現況核心 / 隱藏阻力 / 最佳走向",
-                "Core / Resistance / Direction",
-              )}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-4 text-sm">
-          <p className="text-foreground/56">
-            {t("把這次解讀保留在歷史紀錄", "Keep this reading in history")}
-          </p>
-          <p className="font-medium text-card-foreground">
-            {saveToHistory ? t("開啟", "On") : t("關閉", "Off")}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-auto grid gap-3">
+      <div className="grid gap-3">
         <button
           type="button"
           onClick={() => {
@@ -421,13 +299,6 @@ export function QuestionScreen() {
             ? t("正在整理這次牌陣", "Preparing the spread")
             : t("開始這次直答三張牌", "Begin the three-card reading")}
         </button>
-
-        <Link
-          href="/"
-          className="min-h-[3.75rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-center text-base font-medium text-card-foreground transition hover:border-white/16 hover:bg-white/[0.06]"
-        >
-          {t("返回首頁", "Back to home")}
-        </Link>
       </div>
     </section>
   );

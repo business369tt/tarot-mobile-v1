@@ -5,40 +5,15 @@ import { startTransition, useEffect, useState } from "react";
 import { useTarotFlow } from "@/components/flow/tarot-flow-provider";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import {
-  defaultQuestionDisplay,
-  getCategoryDisplayMeta,
-} from "@/lib/mock-tarot-data";
-
-const spreadSteps = [
-  {
-    zhTitle: "現況核心",
-    enTitle: "Core reality",
-    zhBody: "先讓問題落在你眼前真正正在發生的事。",
-    enBody: "Start with what is truly happening now.",
-  },
-  {
-    zhTitle: "隱藏阻力",
-    enTitle: "Hidden resistance",
-    zhBody: "再看見表面之下那股真正拖住你的力量。",
-    enBody: "Then reveal the unseen resistance underneath.",
-  },
-  {
-    zhTitle: "最佳走向",
-    enTitle: "Best direction",
-    zhBody: "最後把答案收斂成更清楚的下一步。",
-    enBody: "End with a clearer direction for the next step.",
-  },
-] as const;
+import { defaultQuestionDisplay } from "@/lib/mock-tarot-data";
 
 export function RitualScreen() {
   const router = useRouter();
-  const { locale, t } = useLocale();
-  const { session, sessionCategoryMeta, beginShuffle } = useTarotFlow();
+  const { t } = useLocale();
+  const { session, beginShuffle } = useTarotFlow();
   const [isShuffling, setIsShuffling] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
   const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
-  const categoryDisplay = getCategoryDisplayMeta(sessionCategoryMeta.id);
 
   useEffect(() => {
     if (!isShuffling) {
@@ -66,40 +41,31 @@ export function RitualScreen() {
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-4 pt-3">
+    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
+      <div className="space-y-4 pt-6">
         <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
           {t("抽牌前", "BEFORE THE DRAW")}
         </span>
         <div className="space-y-3">
-          <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
-            {t("先把心慢慢放回問題上", "Settle into the question first")}
+          <h1 className="max-w-[15rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+            {t("先停一下，把心放回問題上", "Pause and return to the question")}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
             {t(
-              "你不需要做複雜儀式，只要停一口氣，讓問題與牌位先對齊。",
-              "A brief pause is enough before the draw begins.",
+              "不用做複雜儀式，只要確認你現在真正要問的是這一題。",
+              "No ritual is needed. Just return your attention to this one question.",
             )}
           </p>
         </div>
       </div>
 
-      <div className="rounded-[1.9rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
+      <div className="rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-5 backdrop-blur-sm">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/42">
           {t("這次要回答的問題", "Your question")}
         </p>
         <p className="mt-3 text-sm leading-7 text-card-foreground">
           &ldquo;{focusQuestion}&rdquo;
         </p>
-
-        <div className="mt-4 flex flex-wrap gap-2 text-xs text-foreground/56">
-          <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5">
-            {locale === "zh-TW" ? categoryDisplay.labelZh : categoryDisplay.labelEn}
-          </span>
-          <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5">
-            {t("牌陣：直答三張牌", "Spread: three-card")}
-          </span>
-        </div>
       </div>
 
       <div className="relative overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] px-5 py-8 shadow-[var(--shadow-soft)]">
@@ -109,15 +75,15 @@ export function RitualScreen() {
         <div className="pointer-events-none absolute left-1/2 top-[42%] h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(229,192,142,0.2),transparent_68%)] blur-xl" />
 
         <div className="relative flex flex-col items-center gap-6 text-center">
-          <p className="max-w-[16rem] text-sm leading-7 text-foreground/64">
+          <p className="max-w-[17rem] text-sm leading-7 text-foreground/64">
             {isShuffling
               ? t(
-                  "牌陣正在為這個問題重新落位，接下來就會進入抽牌。",
+                  "牌陣正在為這個問題落位，接下來就會進入抽牌。",
                   "The spread is settling into place now.",
                 )
               : t(
-                  "當你按下開始，這次占卜就會正式進入現況核心、隱藏阻力、最佳走向。",
-                  "Press start to enter the three-card spread.",
+                  "按下開始後，就直接進入直答三張牌。",
+                  "Press start to move directly into the three-card spread.",
                 )}
           </p>
 
@@ -153,22 +119,6 @@ export function RitualScreen() {
               : t("點一下就開始，不用再做別的設定。", "One tap is enough to begin.")}
           </p>
         </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {spreadSteps.map((step) => (
-          <div
-            key={step.zhTitle}
-            className="rounded-[1.35rem] border border-white/8 bg-white/[0.04] px-3 py-4"
-          >
-            <p className="text-sm font-semibold text-card-foreground">
-              {t(step.zhTitle, step.enTitle)}
-            </p>
-            <p className="mt-2 text-[11px] leading-5 text-foreground/56">
-              {t(step.zhBody, step.enBody)}
-            </p>
-          </div>
-        ))}
       </div>
     </section>
   );

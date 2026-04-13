@@ -31,10 +31,6 @@ export function DrawScreen() {
   const progress = selectedCards.length;
   const isComplete = progress === requiredCards;
   const focusQuestion = session?.question.trim() || defaultQuestionDisplay.zh;
-  const nextRole = cardRoles[progress] ?? null;
-  const nextRoleDisplay = nextRole
-    ? getCardRoleDisplayMeta(nextRole.role)
-    : null;
   const spreadName =
     locale === "zh-TW"
       ? defaultOfficialTarotSpread.nameZh
@@ -77,17 +73,17 @@ export function DrawScreen() {
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-3 pt-4">
-        <p className="text-sm text-foreground/56">
-          {t("抽牌儀式", "Draw ritual")}
-        </p>
-        <h1 className="max-w-[14rem] text-[2.55rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
+      <div className="space-y-4 pt-6">
+        <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
+          {t("開始抽牌", "DRAW THE CARDS")}
+        </span>
+        <h1 className="max-w-[15rem] text-[2.55rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
           {locale === "zh-TW"
             ? `依直覺完成「${spreadName}」`
             : `Complete "${spreadName}" by intuition`}
         </h1>
-        <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+        <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
           {isComplete
             ? t(
                 "牌陣已經就位，接下來可以直接翻牌。",
@@ -100,32 +96,27 @@ export function DrawScreen() {
         </p>
       </div>
 
-      <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/44">
-          {t("你的提問", "Your question")}
-        </p>
-        <p className="mt-3 text-sm leading-7 text-card-foreground">
-          &ldquo;{focusQuestion}&rdquo;
-        </p>
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] px-3 py-6 shadow-[var(--shadow-soft)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.12),_transparent_30%)]" />
+        <div className="pointer-events-none absolute left-1/2 top-[45%] h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/7" />
+        <div className="pointer-events-none absolute left-1/2 top-[45%] h-46 w-46 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#f0cb97]/14 motion-safe:animate-[altar-pulse_4.8s_ease-in-out_infinite]" />
 
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-foreground/60">
-            {isComplete
-              ? locale === "zh-TW"
-                ? `${requiredCards} 張牌已選定`
-                : `${requiredCards} cards chosen`
-              : nextRoleDisplay
-                ? locale === "zh-TW"
-                  ? `現在要抽的是：${nextRoleDisplay.labelZh}`
-                  : `Now drawing: ${nextRoleDisplay.labelEn}`
-                : t("完成整個牌陣", "Complete the spread")}
-          </p>
-          <span className="text-sm font-medium text-foreground/72">
+        <div className="relative flex items-start justify-between gap-4 px-2">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/42">
+              {t("你的提問", "Your question")}
+            </p>
+            <p className="max-w-[14rem] text-sm leading-7 text-card-foreground">
+              &ldquo;{focusQuestion}&rdquo;
+            </p>
+          </div>
+
+          <span className="rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 px-3 py-1.5 text-sm font-medium text-[#f3d4a7]">
             {progress}/{requiredCards}
           </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="relative mt-5 grid grid-cols-3 gap-2 px-1">
           {cardRoles.map((role, index) => {
             const display = getCardRoleDisplayMeta(role.role);
             const isActive = index < progress;
@@ -145,16 +136,17 @@ export function DrawScreen() {
                 <p className="text-xs font-semibold text-card-foreground">
                   {locale === "zh-TW" ? display.labelZh : display.labelEn}
                 </p>
+                <p className="mt-2 text-[11px] leading-5 text-foreground/48">
+                  {isActive
+                    ? t("已選定", "Chosen")
+                    : isCurrent
+                      ? t("現在抽這張", "Now drawing")
+                      : t("等待中", "Waiting")}
+                </p>
               </div>
             );
           })}
         </div>
-      </div>
-
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,23,38,0.98),rgba(8,10,16,0.98))] px-3 py-6 shadow-[var(--shadow-soft)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(185,144,93,0.12),_transparent_30%)]" />
-        <div className="pointer-events-none absolute left-1/2 top-[45%] h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/7" />
-        <div className="pointer-events-none absolute left-1/2 top-[45%] h-46 w-46 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#f0cb97]/14 motion-safe:animate-[altar-pulse_4.8s_ease-in-out_infinite]" />
 
         <div className="relative h-[min(17.75rem,43svh)]">
           {spreadCards.slice(0, 9).map((card, index) => {
@@ -210,42 +202,8 @@ export function DrawScreen() {
             ? t("牌陣已經定下來了，下一步就是翻牌。", "The spread is set. Reveal it next.")
             : t("相信第一個拉住你的感覺。", "Trust the first feeling.")}
         </p>
-      </div>
 
-      <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-card-foreground">
-              {isComplete
-                ? t("牌陣已就位", "Spread ready")
-                : t("已選牌卡", "Selected cards")}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-foreground/56">
-              {isComplete
-                ? t(
-                    "所有牌位都已補齊，接下來把它們翻開就好。",
-                    "All cards are in place. Reveal them next.",
-                  )
-                : nextRoleDisplay
-                  ? locale === "zh-TW"
-                    ? `下一張牌會成為「${nextRoleDisplay.labelZh}」`
-                    : `The next card will become "${nextRoleDisplay.labelEn}".`
-                  : t("把整個牌陣補齊。", "Complete the spread.")}
-            </p>
-          </div>
-
-          {progress > 0 ? (
-            <button
-              type="button"
-              onClick={resetSelection}
-              className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-medium text-foreground/60 transition hover:border-line-strong hover:text-card-foreground"
-            >
-              {t("重選", "Reset")}
-            </button>
-          ) : null}
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="relative mt-5 grid grid-cols-3 gap-2 px-1">
           {cardRoles.map((role, slot) => {
             const card = selectedCards[slot];
             const display = getCardRoleDisplayMeta(role.role);
@@ -274,10 +232,10 @@ export function DrawScreen() {
               );
             }
 
-            return (
-              <div key={card.id} className="min-w-0 space-y-2">
-                <TarotCardFace card={card} variant="compact" showNarrative={false} />
-                <button
+              return (
+                <div key={card.id} className="min-w-0 space-y-2">
+                  <TarotCardFace card={card} variant="compact" showNarrative={false} />
+                  <button
                   type="button"
                   onClick={() => removeSelectedCard(card.id)}
                   className="w-full rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-foreground/60 transition hover:border-line-strong hover:text-card-foreground"
@@ -285,12 +243,12 @@ export function DrawScreen() {
                   {t("換牌", "Change")}
                 </button>
               </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 
-      <div className="mt-auto space-y-3">
+      <div className="space-y-3">
         <button
           type="button"
           disabled={!isComplete}
@@ -303,6 +261,15 @@ export function DrawScreen() {
               ? `再選 ${requiredCards - progress} 張牌`
               : `Choose ${requiredCards - progress} more`}
         </button>
+        {progress > 0 ? (
+          <button
+            type="button"
+            onClick={resetSelection}
+            className="w-full rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-card-foreground transition hover:border-line-strong hover:bg-white/[0.07]"
+          >
+            {t("重新抽這三張", "Reset these cards")}
+          </button>
+        ) : null}
         {!isComplete ? (
           <p className="text-center text-sm leading-6 text-foreground/52">
             {t(

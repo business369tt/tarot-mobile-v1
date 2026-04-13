@@ -53,7 +53,7 @@ const stepRank: Record<TarotFlowStep, number> = {
 export const defaultTarotDraft: TarotDraft = {
   question: "",
   category: "love",
-  saveToHistory: true,
+  saveToHistory: false,
 };
 
 function nextSeed() {
@@ -116,7 +116,7 @@ export function normalizeTarotDraft(value: Partial<TarotDraft> | null | undefine
     question: String(value?.question || "").slice(0, 180),
     category: isCategoryId(value?.category) ? value.category : "love",
     saveToHistory:
-      typeof value?.saveToHistory === "boolean" ? value.saveToHistory : true,
+      typeof value?.saveToHistory === "boolean" ? value.saveToHistory : false,
   } satisfies TarotDraft;
 }
 
@@ -133,7 +133,7 @@ export function createTarotSession(
     currentStep: "ritual",
     question,
     category: draft.category,
-    saveToHistory: draft.saveToHistory,
+    saveToHistory: false,
     spreadCards: buildSpread(nextSeed()),
     selectedCards: [],
     revealed: 0,

@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   const draft = normalizeTarotDraft({
     question: body.question ?? "",
     category: body.category as never,
-    saveToHistory: body.saveToHistory,
+    saveToHistory: false,
   });
 
   if (!draft.question.trim()) {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       currentStep: tarotSession.currentStep,
       question: tarotSession.question,
       category: tarotSession.category,
-      saveToHistory: tarotSession.saveToHistory,
+      saveToHistory: false,
       spreadCardsJson: serializeTarotCards(tarotSession.spreadCards),
       selectedCardsJson: serializeTarotCards(tarotSession.selectedCards),
       revealed: tarotSession.revealed,
@@ -152,10 +152,7 @@ export async function PATCH(request: Request) {
     question:
       typeof body.question === "string" ? body.question : currentSession.question,
     category: (body.category as never) ?? currentSession.category,
-    saveToHistory:
-      typeof body.saveToHistory === "boolean"
-        ? body.saveToHistory
-        : currentSession.saveToHistory,
+    saveToHistory: false,
     spreadCards: Array.isArray(body.spreadCards)
       ? (body.spreadCards as never)
       : currentSession.spreadCards,
@@ -180,7 +177,7 @@ export async function PATCH(request: Request) {
       currentStep: nextSession.currentStep,
       question: nextSession.question,
       category: nextSession.category,
-      saveToHistory: nextSession.saveToHistory,
+      saveToHistory: false,
       spreadCardsJson: serializeTarotCards(nextSession.spreadCards),
       selectedCardsJson: serializeTarotCards(nextSession.selectedCards),
       revealed: nextSession.revealed,

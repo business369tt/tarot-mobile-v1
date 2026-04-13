@@ -17,13 +17,7 @@ const navItems = [
     href: "/question",
     zh: "抽牌",
     en: "Draw",
-    match: ["/question", "/ritual", "/draw", "/reveal", "/reading", "/points"],
-  },
-  {
-    href: "/history",
-    zh: "紀錄",
-    en: "History",
-    match: ["/history", "/invite"],
+    match: ["/question", "/ritual", "/draw", "/reveal", "/reading", "/points", "/invite"],
   },
 ] as const;
 
@@ -46,6 +40,9 @@ export function MobileShell({
   const flowHref =
     session && ownsCurrentSession ? getResumeRoute() : "/question";
   const isHome = pathname === "/";
+  const isFocusedFlow = ["/ritual", "/draw", "/reveal", "/reading"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
   const brandLabel = isHome ? t("塔羅 AI", "Tarot AI") : t("塔羅", "Tarot");
 
   return (
@@ -82,32 +79,38 @@ export function MobileShell({
           </span>
         </header>
 
-        <main className={`flex flex-1 flex-col ${isHome ? "pb-10" : "pb-8"}`}>
+        <main
+          className={`flex flex-1 flex-col ${
+            isFocusedFlow ? "pb-3" : isHome ? "pb-10" : "pb-8"
+          }`}
+        >
           {children}
         </main>
 
-        <footer className="mt-auto px-1 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-2">
-          <nav className="grid grid-cols-3 gap-2 rounded-[1.75rem] border border-[rgba(240,203,151,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.34)] backdrop-blur-xl">
-            {navItems.map((item) => {
-              const href = item.href === "/question" ? flowHref : item.href;
-              const isActive = isActivePath(pathname, item);
+        {isFocusedFlow ? null : (
+          <footer className="mt-auto px-1 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-2">
+            <nav className="grid grid-cols-2 gap-2 rounded-[1.75rem] border border-[rgba(240,203,151,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.34)] backdrop-blur-xl">
+              {navItems.map((item) => {
+                const href = item.href === "/question" ? flowHref : item.href;
+                const isActive = isActivePath(pathname, item);
 
-              return (
-                <Link
-                  key={item.href}
-                  href={href}
-                  className={`flex min-h-[3rem] items-center justify-center rounded-[1.2rem] px-3 py-3 text-center text-sm font-medium transition ${
-                    isActive
-                      ? "bg-[#f3e5cf] text-[#17130e] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_8px_20px_rgba(0,0,0,0.18)]"
-                      : "text-foreground/60 hover:bg-white/[0.04] hover:text-foreground"
-                  }`}
-                >
-                  {locale === "zh-TW" ? item.zh : item.en}
-                </Link>
-              );
-            })}
-          </nav>
-        </footer>
+                return (
+                  <Link
+                    key={item.href}
+                    href={href}
+                    className={`flex min-h-[3rem] items-center justify-center rounded-[1.2rem] px-3 py-3 text-center text-sm font-medium transition ${
+                      isActive
+                        ? "bg-[#f3e5cf] text-[#17130e] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_8px_20px_rgba(0,0,0,0.18)]"
+                        : "text-foreground/60 hover:bg-white/[0.04] hover:text-foreground"
+                    }`}
+                  >
+                    {locale === "zh-TW" ? item.zh : item.en}
+                  </Link>
+                );
+              })}
+            </nav>
+          </footer>
+        )}
       </div>
     </div>
   );

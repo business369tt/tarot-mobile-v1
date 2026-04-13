@@ -96,79 +96,28 @@ export function RevealScreen() {
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-5 py-6">
-      <div className="space-y-4 pt-3">
+    <section className="flex flex-1 flex-col justify-between gap-8 py-6">
+      <div className="space-y-4 pt-6">
         <span className="inline-flex items-center rounded-full border border-[#f1c98d]/18 bg-[#f1c98d]/8 px-3 py-1 text-[0.72rem] font-medium tracking-[0.18em] text-[#f3d4a7]">
           {t("翻牌時刻", "REVEAL MOMENT")}
         </span>
         <div className="space-y-3">
-          <h1 className="max-w-[14rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
+          <h1 className="max-w-[15rem] text-[2.7rem] font-semibold leading-[1.02] tracking-tight text-card-foreground">
             {locale === "zh-TW"
               ? `讓「${spreadName}」一張一張現身`
               : `Let "${spreadName}" appear card by card`}
           </h1>
-          <p className="max-w-[18rem] text-base leading-7 text-foreground/62">
+          <p className="max-w-[19rem] text-base leading-7 text-foreground/62">
             {allRevealed
               ? t(
-                  "三張牌都已經到位，現在可以把這次答案完整讀出來。",
+                  "三張牌都已到位，下一步就是直接讀取完整解讀。",
                   "All three cards are in place now.",
                 )
               : t(
-                  "先不要急著解讀，讓牌自己把節奏帶出來。",
+                  "先不要急著解讀，讓牌自己把順序帶出來。",
                   "Let the cards set the pace before the reading begins.",
                 )}
           </p>
-        </div>
-      </div>
-
-      <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-card-foreground">
-              {allRevealed
-                ? t("牌陣已完整現身", "The spread is fully revealed")
-                : t("牌正在依序翻開", "The cards are appearing in order")}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-foreground/56">
-              {allRevealed
-                ? t("現況核心、隱藏阻力、最佳走向都已經明朗。", "All three positions are now visible.")
-                : t("每翻開一張，答案就會更靠近一點。", "Each reveal brings the answer closer.")}
-            </p>
-          </div>
-          <span className="rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 px-3 py-1.5 text-sm font-medium text-[#f3d4a7]">
-            {revealedCount}/{requiredCards}
-          </span>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {selectedCards.map((card, index) => {
-            const display = getCardRoleDisplayMeta(card.role);
-            const isRevealed = index < revealedCount;
-
-            return (
-              <div
-                key={card.id}
-                className={`rounded-[1.25rem] border px-3 py-3 transition ${
-                  isRevealed
-                    ? "border-line-strong bg-brand-soft"
-                    : index === revealedCount
-                      ? "border-[#f0cb97]/20 bg-white/[0.05]"
-                      : "border-white/10 bg-black/18"
-                }`}
-              >
-                <p className="text-xs font-semibold text-card-foreground">
-                  {locale === "zh-TW" ? display.labelZh : display.labelEn}
-                </p>
-                <p className="mt-2 text-[11px] leading-5 text-foreground/48">
-                  {isRevealed
-                    ? t("已現身", "Visible")
-                    : index === revealedCount
-                      ? t("即將翻開", "Next to reveal")
-                      : t("等待中", "Waiting")}
-                </p>
-              </div>
-            );
-          })}
         </div>
       </div>
 
@@ -190,6 +139,48 @@ export function RevealScreen() {
         <div className="pointer-events-none absolute left-1/2 top-[39%] h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/6 motion-safe:animate-[halo-drift_8s_ease-in-out_infinite]" />
         <div className="pointer-events-none absolute left-1/2 top-[39%] h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#f0cb97]/14 motion-safe:animate-[halo-drift_6s_ease-in-out_infinite]" />
         <div className="pointer-events-none absolute left-1/2 top-[39%] h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(229,192,142,0.22),transparent_72%)] blur-xl" />
+
+        <div className="relative flex items-center justify-between px-2">
+          <p className="text-sm font-medium text-card-foreground">
+            {allRevealed
+              ? t("牌陣已完整現身", "The spread is fully revealed")
+              : t("牌正在依序翻開", "The cards are appearing in order")}
+          </p>
+          <span className="rounded-full border border-[#f0cb97]/18 bg-[#f0cb97]/8 px-3 py-1.5 text-sm font-medium text-[#f3d4a7]">
+            {revealedCount}/{requiredCards}
+          </span>
+        </div>
+
+        <div className="relative mt-5 grid grid-cols-3 gap-2 px-1">
+          {selectedCards.map((card, index) => {
+            const display = getCardRoleDisplayMeta(card.role);
+            const isRevealed = index < revealedCount;
+
+            return (
+              <div
+                key={`${card.id}-slot`}
+                className={`rounded-[1.2rem] border px-3 py-3 transition ${
+                  isRevealed
+                    ? "border-line-strong bg-brand-soft"
+                    : index === revealedCount
+                      ? "border-[#f0cb97]/20 bg-white/[0.05]"
+                      : "border-white/10 bg-black/18"
+                }`}
+              >
+                <p className="text-xs font-semibold text-card-foreground">
+                  {locale === "zh-TW" ? display.labelZh : display.labelEn}
+                </p>
+                <p className="mt-2 text-[11px] leading-5 text-foreground/48">
+                  {isRevealed
+                    ? t("已現身", "Visible")
+                    : index === revealedCount
+                      ? t("即將翻開", "Next")
+                      : t("等待中", "Waiting")}
+                </p>
+              </div>
+            );
+          })}
+        </div>
 
         <div className="relative mx-auto flex min-h-[22rem] max-w-[19.5rem] items-end justify-center gap-2 sm:gap-4">
           {selectedCards.map((card, index) => {
@@ -246,56 +237,17 @@ export function RevealScreen() {
         <p className="relative mt-3 text-center text-sm leading-6 text-foreground/58">
           {allRevealed
             ? t(
-                "答案已經成形，下一步就是讀取這次完整解讀。",
+                "答案已經成形，現在就去讀這次完整解讀。",
                 "The answer has taken shape. Read it next.",
               )
             : t(
                 "不用急，牌會自己把順序與重心帶出來。",
                 "There is no rush. Let the cards reveal their own order.",
-              )}
+          )}
         </p>
       </div>
 
-      <div className="rounded-[1.85rem] border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm">
-        <h2 className="text-lg font-semibold text-card-foreground">
-          {t("翻牌完成後你會看到", "What this spread is showing")}
-        </h2>
-        <div className="mt-4 grid gap-3">
-          {selectedCards.map((card, index) => {
-            const roleDisplay = getCardRoleDisplayMeta(card.role);
-            const orientationDisplay = getOrientationDisplayMeta(card.orientation);
-            const cardDisplay = getCardDisplayMeta(card.id);
-            const isRevealed = index < revealedCount;
-
-            return (
-              <div
-                key={card.id}
-                className="rounded-[1.3rem] border border-white/10 bg-black/18 px-4 py-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold text-card-foreground">
-                      {locale === "zh-TW" ? roleDisplay.labelZh : roleDisplay.labelEn}
-                    </p>
-                    <p className="mt-2 text-sm text-foreground/56">
-                      {isRevealed
-                        ? locale === "zh-TW"
-                          ? `${cardDisplay.nameZh}・${orientationDisplay.zh}`
-                          : `${cardDisplay.nameEn} · ${orientationDisplay.en}`
-                        : t("等待翻開", "Waiting to reveal")}
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-foreground/42">
-                    {index + 1}/{requiredCards}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-auto space-y-2">
+      <div className="space-y-2">
         <button
           type="button"
           onClick={allRevealed ? handleContinue : revealNextCard}
