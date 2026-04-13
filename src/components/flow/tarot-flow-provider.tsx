@@ -34,7 +34,6 @@ type TarotFlowContextValue = {
   ownsCurrentSession: boolean;
   question: string;
   categoryId: TarotCategoryId;
-  saveToHistory: boolean;
   categoryMeta: ReturnType<typeof getCategoryMeta>;
   sessionCategoryMeta: ReturnType<typeof getCategoryMeta>;
   spreadCards: TarotCard[];
@@ -42,7 +41,6 @@ type TarotFlowContextValue = {
   revealedCount: number;
   setQuestion: (value: string) => void;
   setCategoryId: (value: TarotCategoryId) => void;
-  setSaveToHistory: (value: boolean) => void;
   createSessionFromDraft: () => Promise<TarotSession | null>;
   beginShuffle: () => void;
   toggleCardSelection: (cardId: string) => void;
@@ -84,7 +82,6 @@ function toPatchPayload(session: TarotSession) {
     currentStep: session.currentStep,
     question: session.question,
     category: session.category,
-    saveToHistory: session.saveToHistory,
     spreadCards: session.spreadCards,
     selectedCards: session.selectedCards,
     revealed: session.revealed,
@@ -118,7 +115,6 @@ export function TarotFlowProvider({
         ? {
             question: normalized.question,
             category: normalized.category,
-            saveToHistory: normalized.saveToHistory,
           }
         : defaultTarotDraft,
     );
@@ -219,7 +215,6 @@ export function TarotFlowProvider({
   const ownsCurrentSession = isSessionOwnedByViewer(session, viewerId);
   const question = draft.question;
   const categoryId = draft.category;
-  const saveToHistory = draft.saveToHistory;
   const categoryMeta = getCategoryMeta(categoryId);
   const sessionCategoryMeta = getCategoryMeta(session?.category ?? categoryId);
   const spreadCards = session?.spreadCards ?? [];
@@ -234,7 +229,6 @@ export function TarotFlowProvider({
         ownsCurrentSession,
         question,
         categoryId,
-        saveToHistory,
         categoryMeta,
         sessionCategoryMeta,
         spreadCards,
@@ -250,12 +244,6 @@ export function TarotFlowProvider({
           setDraft((current) => ({
             ...current,
             category: value,
-          }));
-        },
-        setSaveToHistory: (value) => {
-          setDraft((current) => ({
-            ...current,
-            saveToHistory: value,
           }));
         },
         createSessionFromDraft: async () => {

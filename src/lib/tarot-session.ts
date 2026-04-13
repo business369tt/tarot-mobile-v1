@@ -14,7 +14,6 @@ export type TarotFlowStep = "question" | "ritual" | "draw" | "reveal" | "reading
 export type TarotDraft = {
   question: string;
   category: TarotCategoryId;
-  saveToHistory: boolean;
 };
 
 export type TarotSession = {
@@ -23,7 +22,6 @@ export type TarotSession = {
   currentStep: TarotFlowStep;
   question: string;
   category: TarotCategoryId;
-  saveToHistory: boolean;
   spreadCards: TarotCard[];
   selectedCards: SelectedTarotCard[];
   revealed: number;
@@ -53,7 +51,6 @@ const stepRank: Record<TarotFlowStep, number> = {
 export const defaultTarotDraft: TarotDraft = {
   question: "",
   category: "love",
-  saveToHistory: false,
 };
 
 function nextSeed() {
@@ -115,8 +112,6 @@ export function normalizeTarotDraft(value: Partial<TarotDraft> | null | undefine
   return {
     question: String(value?.question || "").slice(0, 180),
     category: isCategoryId(value?.category) ? value.category : "love",
-    saveToHistory:
-      typeof value?.saveToHistory === "boolean" ? value.saveToHistory : false,
   } satisfies TarotDraft;
 }
 
@@ -133,7 +128,6 @@ export function createTarotSession(
     currentStep: "ritual",
     question,
     category: draft.category,
-    saveToHistory: false,
     spreadCards: buildSpread(nextSeed()),
     selectedCards: [],
     revealed: 0,
@@ -180,7 +174,6 @@ export function normalizeTarotSession(session: TarotSession): TarotSession {
     currentStep: "ritual",
     question: String(session.question || "").trim().slice(0, 180),
     category,
-    saveToHistory: Boolean(session.saveToHistory),
     spreadCards,
     selectedCards,
     revealed: clampRevealCount(Number(session.revealed) || 0, selectedCards),
@@ -214,7 +207,6 @@ type TarotSessionRecordInput = {
   currentStep: string;
   question: string;
   category: string;
-  saveToHistory: boolean;
   spreadCardsJson: string | null;
   selectedCardsJson: string | null;
   revealed: number;
@@ -230,7 +222,6 @@ export function mapRecordToTarotSession(record: TarotSessionRecordInput): TarotS
     currentStep: (record.currentStep as TarotFlowStep) ?? "ritual",
     question: record.question,
     category: isCategoryId(record.category) ? record.category : "love",
-    saveToHistory: record.saveToHistory,
     spreadCards: parseArrayJson<TarotCard>(record.spreadCardsJson),
     selectedCards: parseArrayJson<SelectedTarotCard>(record.selectedCardsJson),
     revealed: record.revealed,

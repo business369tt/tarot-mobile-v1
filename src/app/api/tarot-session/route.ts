@@ -85,12 +85,10 @@ export async function POST(request: Request) {
   const body = (await request.json()) as Partial<{
     question: string;
     category: string;
-    saveToHistory: boolean;
   }>;
   const draft = normalizeTarotDraft({
     question: body.question ?? "",
     category: body.category as never,
-    saveToHistory: false,
   });
 
   if (!draft.question.trim()) {
@@ -139,7 +137,6 @@ export async function PATCH(request: Request) {
     currentStep: string;
     question: string;
     category: string;
-    saveToHistory: boolean;
     spreadCards: unknown[];
     selectedCards: unknown[];
     revealed: number;
@@ -152,7 +149,6 @@ export async function PATCH(request: Request) {
     question:
       typeof body.question === "string" ? body.question : currentSession.question,
     category: (body.category as never) ?? currentSession.category,
-    saveToHistory: false,
     spreadCards: Array.isArray(body.spreadCards)
       ? (body.spreadCards as never)
       : currentSession.spreadCards,
